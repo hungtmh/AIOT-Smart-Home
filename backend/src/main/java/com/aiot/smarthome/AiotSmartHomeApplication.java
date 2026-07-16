@@ -30,6 +30,8 @@ public class AiotSmartHomeApplication {
     setSpringProperty(env, "spring.datasource.url", "SUPABASE_DB_URL");
     setSpringProperty(env, "spring.datasource.username", "SUPABASE_DB_USERNAME");
     setSpringProperty(env, "spring.datasource.password", "SUPABASE_DB_PASSWORD");
+    setSpringProperty(env, "aiot.auth.jwt-secret", "SUPABASE_JWT_SECRET");
+    setSpringProperty(env, "aiot.auth.jwks-uri", "SUPABASE_JWKS_URI");
     setSpringProperty(env, "aiot.cors.allowed-origins", "CORS_ALLOWED_ORIGINS");
     setSpringProperty(env, "aiot.mqtt.broker-uri", "MQTT_BROKER_URI");
     setSpringProperty(env, "aiot.mqtt.username", "MQTT_USERNAME");
@@ -44,6 +46,8 @@ public class AiotSmartHomeApplication {
     putIfPresent(properties, "spring.datasource.url", env, "SUPABASE_DB_URL");
     putIfPresent(properties, "spring.datasource.username", env, "SUPABASE_DB_USERNAME");
     putIfPresent(properties, "spring.datasource.password", env, "SUPABASE_DB_PASSWORD");
+    putIfPresent(properties, "aiot.auth.jwt-secret", env, "SUPABASE_JWT_SECRET");
+    putIfPresent(properties, "aiot.auth.jwks-uri", env, "SUPABASE_JWKS_URI");
     putIfPresent(properties, "aiot.cors.allowed-origins", env, "CORS_ALLOWED_ORIGINS");
     putIfPresent(properties, "aiot.mqtt.broker-uri", env, "MQTT_BROKER_URI");
     putIfPresent(properties, "aiot.mqtt.username", env, "MQTT_USERNAME");

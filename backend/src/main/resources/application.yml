@@ -14,6 +14,9 @@ spring:
       mode: never
 
 aiot:
+  auth:
+    jwt-secret: ${SUPABASE_JWT_SECRET:}
+    jwks-uri: ${SUPABASE_JWKS_URI:}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
   mqtt:

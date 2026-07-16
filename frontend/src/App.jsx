@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import AutomationPage from './components/AutomationPage'
 import DashboardPage from './components/DashboardPage'
@@ -7,17 +7,41 @@ import { icons } from './components/icons'
 import LoginPage from './components/LoginPage'
 import SettingsPage from './components/SettingsPage'
 import Sidebar from './components/Sidebar'
+import { isSupabaseConfigured, supabase } from './lib/supabase'
 
 const { ShieldCheck, X } = icons
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [email, setEmail] = useState('admin@gmail.com')
-  const [password, setPassword] = useState('123456')
+  const [session, setSession] = useState(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [activeNav, setActiveNav] = useState('dashboard')
   const [activeHistoryTab, setActiveHistoryTab] = useState('sensors')
   const [autoMode, setAutoMode] = useState(true)
   const [toastVisible, setToastVisible] = useState(false)
+  const [isAuthLoading, setIsAuthLoading] = useState(true)
+  const [authError, setAuthError] = useState('')
+
+  useEffect(() => {
+    let mounted = true
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return
+      setSession(data.session)
+      setEmail(data.session?.user?.email ?? '')
+      setIsAuthLoading(false)
+    })
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession)
+      setEmail(nextSession?.user?.email ?? '')
+    })
+
+    return () => {
+      mounted = false
+      authListener.subscription.unsubscribe()
+    }
+  }, [])
 
   const lastUpdated = new Intl.DateTimeFormat('vi-VN', {
     day: '2-digit',
@@ -28,23 +52,52 @@ function App() {
     second: '2-digit',
   }).format(new Date())
 
-  function handleSignIn(event) {
+  async function handleSignIn(event) {
     event.preventDefault()
-    setIsAuthenticated(true)
+
+    if (!isSupabaseConfigured) {
+      setAuthError('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in frontend/.env')
+      return
+    }
+
+    setIsAuthLoading(true)
+    setAuthError('')
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    setIsAuthLoading(false)
+
+    if (error) {
+      setAuthError('Email hoac mat khau khong dung.')
+      return
+    }
+
+    setSession(data.session)
     setToastVisible(true)
   }
 
-  function handleSignOut() {
-    setIsAuthenticated(false)
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    setSession(null)
     setToastVisible(false)
     setActiveNav('dashboard')
+    setPassword('')
   }
 
-  if (!isAuthenticated) {
+  if (isAuthLoading && !session) {
+    return <div className="app-loading">Checking session...</div>
+  }
+
+  if (!session) {
     return (
       <LoginPage
         email={email}
         password={password}
+        error={authError}
+        isLoading={isAuthLoading}
         onEmailChange={setEmail}
         onPasswordChange={setPassword}
         onSignIn={handleSignIn}
@@ -54,7 +107,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar activeNav={activeNav} email={email} onNavigate={setActiveNav} onSignOut={handleSignOut} />
+      <Sidebar activeNav={activeNav} email={session.user.email} onNavigate={setActiveNav} onSignOut={handleSignOut} />
 
       <main className="dashboard">
         {toastVisible && (

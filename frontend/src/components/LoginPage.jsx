@@ -2,7 +2,7 @@ import { icons } from './icons'
 
 const { Home, KeyRound, Lock, Mic, ShieldCheck, Thermometer, UserRound, Wifi } = icons
 
-function LoginPage({ email, password, onEmailChange, onPasswordChange, onSignIn }) {
+function LoginPage({ email, password, error, isLoading, onEmailChange, onPasswordChange, onSignIn }) {
   return (
     <main className="login-shell">
       <section className="login-panel" aria-label="Sign in">
@@ -22,6 +22,7 @@ function LoginPage({ email, password, onEmailChange, onPasswordChange, onSignIn 
         </div>
 
         <form className="login-form" onSubmit={onSignIn}>
+          {error && <div className="login-error">{error}</div>}
           <label>
             <span>Email</span>
             <div className="input-wrap">
@@ -48,9 +49,9 @@ function LoginPage({ email, password, onEmailChange, onPasswordChange, onSignIn 
               />
             </div>
           </label>
-          <button className="primary-button" type="submit">
+          <button className="primary-button" type="submit" disabled={isLoading}>
             <KeyRound size={18} aria-hidden="true" />
-            Sign in
+            {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
       </section>

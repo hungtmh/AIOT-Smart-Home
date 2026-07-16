@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { initialDevices } from '../data/mockData'
-import { commandLed, getLedState } from '../lib/api'
+import { commandLed, getAuthDebug, getLedState } from '../lib/api'
 import { icons } from './icons'
 
 const { Wifi } = icons
@@ -72,8 +72,18 @@ function DeviceControlCenter() {
           ),
         )
         setLedFeedback(ledState.mqttPublished ? '' : 'Saved to database, but MQTT broker is not connected.')
-      } catch {
-        setLedFeedback('Could not send LED command to backend.')
+      } catch (error) {
+        if (error.status === 401 || error.status === 403) {
+          const authDebug = await getAuthDebug()
+          const alg = authDebug.header?.alg ?? 'none'
+          const kid = authDebug.header?.kid ?? 'none'
+          const subject = authDebug.payload?.sub ? `${authDebug.payload.sub}`.slice(0, 8) : 'none'
+          setLedFeedback(
+            `JWT rejected by backend. session=${authDebug.hasSession} token=${authDebug.hasToken} alg=${alg} kid=${kid} sub=${subject}`,
+          )
+        } else {
+          setLedFeedback('Could not send LED command to backend.')
+        }
       } finally {
         setPendingDeviceId(null)
       }
