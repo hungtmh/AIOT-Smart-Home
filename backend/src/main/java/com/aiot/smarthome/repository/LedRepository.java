@@ -1,5 +1,6 @@
-package com.aiot.smarthome.device;
+package com.aiot.smarthome.repository;
 
+import com.aiot.smarthome.model.DeviceState;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -10,8 +11,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class DeviceRepository {
-  private static final Logger logger = LoggerFactory.getLogger(DeviceRepository.class);
+public class LedRepository {
+  private static final Logger logger = LoggerFactory.getLogger(LedRepository.class);
   private static final String LED_DEVICE_ID = "led";
 
   private final JdbcTemplate jdbcTemplate;
@@ -22,7 +23,7 @@ public class DeviceRepository {
   private boolean databaseAvailable = true;
   private boolean databaseWarningLogged;
 
-  public DeviceRepository(JdbcTemplate jdbcTemplate) {
+  public LedRepository(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
   }
 

@@ -1,7 +1,7 @@
 package com.aiot.smarthome.mqtt;
 
 import com.aiot.smarthome.config.AiotProperties;
-import com.aiot.smarthome.device.LedService;
+import com.aiot.smarthome.service.LedService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;

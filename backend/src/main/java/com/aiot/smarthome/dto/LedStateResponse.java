@@ -1,5 +1,6 @@
-package com.aiot.smarthome.device;
+package com.aiot.smarthome.dto;
 
+import com.aiot.smarthome.model.DeviceState;
 import java.time.OffsetDateTime;
 
 public record LedStateResponse(

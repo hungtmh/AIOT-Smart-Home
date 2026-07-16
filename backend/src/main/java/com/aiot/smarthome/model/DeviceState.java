@@ -1,4 +1,4 @@
-package com.aiot.smarthome.device;
+package com.aiot.smarthome.model;
 
 import java.time.OffsetDateTime;
 

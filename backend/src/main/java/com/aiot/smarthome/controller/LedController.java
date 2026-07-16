@@ -1,5 +1,8 @@
-package com.aiot.smarthome.device;
+package com.aiot.smarthome.controller;
 
+import com.aiot.smarthome.dto.LedCommandRequest;
+import com.aiot.smarthome.dto.LedStateResponse;
+import com.aiot.smarthome.service.LedService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

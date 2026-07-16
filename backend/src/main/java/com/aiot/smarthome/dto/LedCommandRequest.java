@@ -1,4 +1,4 @@
-package com.aiot.smarthome.device;
+package com.aiot.smarthome.dto;
 
 import jakarta.validation.constraints.NotNull;
 

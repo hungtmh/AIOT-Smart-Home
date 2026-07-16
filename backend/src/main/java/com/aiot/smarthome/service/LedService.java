@@ -1,14 +1,17 @@
-package com.aiot.smarthome.device;
+package com.aiot.smarthome.service;
 
+import com.aiot.smarthome.dto.LedStateResponse;
+import com.aiot.smarthome.model.DeviceState;
 import com.aiot.smarthome.mqtt.MqttCommandPublisher;
+import com.aiot.smarthome.repository.LedRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LedService {
-  private final DeviceRepository repository;
+  private final LedRepository repository;
   private final MqttCommandPublisher mqttCommandPublisher;
 
-  public LedService(DeviceRepository repository, MqttCommandPublisher mqttCommandPublisher) {
+  public LedService(LedRepository repository, MqttCommandPublisher mqttCommandPublisher) {
     this.repository = repository;
     this.mqttCommandPublisher = mqttCommandPublisher;
   }
