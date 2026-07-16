@@ -1,72 +1,74 @@
 # AIOT Smart Home Backend
 
-Minimal Spring Boot backend for the first real device-control flow:
+Spring Boot backend cho luong dieu khien LED qua MQTT, luu trang thai vao Supabase PostgreSQL va bao ve API bang Supabase JWT.
+
+Doc README goc cua repo truoc:
 
 ```text
-React LED switch
-  -> Spring Boot REST API
-  -> MQTT command topic
-  -> ESP32/Arduino turns LED on/off
-  -> ESP32 publishes reported state
-  -> Spring Boot stores state/logs in Supabase PostgreSQL
+../README.md
 ```
 
-## 1. Supabase
+## Cau hinh
 
-Open Supabase SQL Editor and run:
-
-```sql
--- backend/database/supabase_schema.sql
-```
-
-Then set these environment variables before starting Spring Boot:
-
-```powershell
-$env:SUPABASE_DB_URL="jdbc:postgresql://aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres"
-$env:SUPABASE_DB_USERNAME="postgres.your-project-ref"
-$env:SUPABASE_DB_PASSWORD="your-supabase-database-password"
-```
-
-Use the Supabase connection pooler URL if your network has trouble with direct IPv6.
-
-## 2. MQTT
-
-For a local broker:
-
-```powershell
-$env:MQTT_BROKER_URI="tcp://localhost:1883"
-```
-
-For a cloud broker, set the broker URI, username, and password:
-
-```powershell
-$env:MQTT_BROKER_URI="ssl://your-broker-host:8883"
-$env:MQTT_USERNAME="your-mqtt-username"
-$env:MQTT_PASSWORD="your-mqtt-password"
-```
-
-Default topics:
+Can co file:
 
 ```text
-Command: aiot/esp32-s3/device/led/set
-State:   aiot/esp32-s3/device/led/state
+backend/.env
 ```
 
-Payload is intentionally simple for Arduino: `ON` or `OFF`.
+Mau bien moi truong:
 
-## 3. Run
+```env
+SUPABASE_DB_URL=jdbc:postgresql://<supabase-pooler-host>:5432/postgres?sslmode=require
+SUPABASE_DB_USERNAME=postgres.<project-ref>
+SUPABASE_DB_PASSWORD=<database-password>
+SUPABASE_JWT_SECRET=<legacy-jwt-secret>
+SUPABASE_JWKS_URI=https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json
+
+MQTT_BROKER_URI=ssl://<hivemq-host>:8883
+MQTT_USERNAME=<mqtt-username>
+MQTT_PASSWORD=<mqtt-password>
+MQTT_LED_COMMAND_TOPIC=aiot/esp32-s3/device/led/set
+MQTT_LED_STATE_TOPIC=aiot/esp32-s3/device/led/state
+
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+## Database
+
+Chay SQL trong Supabase SQL Editor:
+
+```text
+database/supabase_schema.sql
+```
+
+## Run
 
 ```powershell
-cd backend
-.\mvnw.cmd spring-boot:run
+.\run-dev.ps1
 ```
 
-API:
+Backend mac dinh chay:
+
+```text
+http://localhost:8080
+```
+
+## API
+
+Tat ca `/api/**` can JWT hop le tu Supabase Auth.
 
 ```http
-GET  http://localhost:8080/api/devices/led
-POST http://localhost:8080/api/devices/led/command
+GET /api/auth/me
+GET /api/devices/led
+POST /api/devices/led/command
 Content-Type: application/json
 
 { "state": true }
+```
+
+## Kiem tra build
+
+```powershell
+.\mvnw.cmd -DskipTests package
 ```
