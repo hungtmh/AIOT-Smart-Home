@@ -1,0 +1,25 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: aiot-smart-home-backend
+  datasource:
+    url: ${SUPABASE_DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${SUPABASE_DB_USERNAME:postgres}
+    password: ${SUPABASE_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: never
+
+aiot:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+  mqtt:
+    broker-uri: ${MQTT_BROKER_URI:tcp://localhost:1883}
+    client-id: ${MQTT_CLIENT_ID:aiot-spring-backend}
+    username: ${MQTT_USERNAME:}
+    password: ${MQTT_PASSWORD:}
+    command-topic: ${MQTT_LED_COMMAND_TOPIC:aiot/esp32-s3/device/led/set}
+    state-topic: ${MQTT_LED_STATE_TOPIC:aiot/esp32-s3/device/led/state}
