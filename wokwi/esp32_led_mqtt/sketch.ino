@@ -259,5 +259,5 @@ void loop() {
   }
 
   mqtt.loop();
-  publishTelemetryEvery(5000);
+  publishTelemetryEvery(1000);
 }

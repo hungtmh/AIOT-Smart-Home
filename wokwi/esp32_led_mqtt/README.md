@@ -15,7 +15,7 @@ Telemetry topic:
 aiot/esp32-s3/telemetry
 ```
 
-Wokwi publishes DHT22 temperature/humidity and MQ2 gas sensor smoke values every 5 seconds:
+Wokwi publishes DHT22 temperature/humidity and MQ2 gas sensor smoke values every 1 second:
 
 ```json
 {"temperature":28.4,"humidity":64.0,"smokePpm":18}

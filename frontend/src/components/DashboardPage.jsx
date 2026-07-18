@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
 import { recentActivityRows, sensorCards } from '../data/mockData'
 import DeviceControlCenter from './DeviceControlCenter'
 import { icons } from './icons'
-import { getDeviceStates, getLatestTelemetry } from '../lib/api'
 import MetricGrid from './MetricGrid'
 import SensorTimeline from './SensorTimeline'
+import { useRealtime } from '../realtime/RealtimeContext'
 
 const {
   Activity,
@@ -76,34 +75,8 @@ function formatUpdatedAt(value, fallback) {
 }
 
 function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
-  const [liveSensors, setLiveSensors] = useState(sensorCards)
-  const [latestTelemetry, setLatestTelemetry] = useState(null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function syncDashboardData() {
-      try {
-        const [telemetry, deviceStates] = await Promise.all([getLatestTelemetry(), getDeviceStates()])
-        if (cancelled) return
-
-        setLatestTelemetry(telemetry)
-        setLiveSensors(buildLiveSensorCards(telemetry, deviceStates))
-      } catch {
-        if (!cancelled) {
-          setLiveSensors(sensorCards)
-        }
-      }
-    }
-
-    syncDashboardData()
-    const intervalId = window.setInterval(syncDashboardData, 5000)
-
-    return () => {
-      cancelled = true
-      window.clearInterval(intervalId)
-    }
-  }, [])
+  const { telemetry: latestTelemetry, deviceStates } = useRealtime()
+  const liveSensors = buildLiveSensorCards(latestTelemetry, deviceStates)
 
   const smokePpm = Math.round(latestTelemetry?.smokePpm ?? 18)
   const smokeSafe = smokePpm < 70

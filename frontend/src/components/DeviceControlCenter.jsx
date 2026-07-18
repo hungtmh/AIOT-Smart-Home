@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { initialDevices } from '../data/mockData'
-import { commandDevice, getAuthDebug, getDeviceStates } from '../lib/api'
+import { commandDevice, getAuthDebug } from '../lib/api'
+import { useRealtime } from '../realtime/RealtimeContext'
 import { icons } from './icons'
 
 const { Wifi } = icons
@@ -20,41 +21,22 @@ function applyDeviceStatus(device, nextStatus) {
 }
 
 function DeviceControlCenter() {
-  const [devices, setDevices] = useState(initialDevices)
+  const { connectionState, deviceStates, error: realtimeError, updateDeviceState } = useRealtime()
   const [pendingDeviceId, setPendingDeviceId] = useState(null)
   const [deviceFeedback, setDeviceFeedback] = useState('')
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function syncDeviceStates() {
-      try {
-        const deviceStates = await getDeviceStates()
-        if (cancelled) return
-
-        const stateByDeviceId = new Map(deviceStates.map((deviceState) => [deviceState.deviceId, deviceState]))
-        setDevices((currentDevices) =>
-          currentDevices.map((device) => {
-            const deviceState = stateByDeviceId.get(device.id)
-            return deviceState ? applyDeviceStatus(device, Boolean(deviceState.desiredState)) : device
-          }),
-        )
-        setDeviceFeedback('')
-      } catch {
-        if (!cancelled) {
-          setDeviceFeedback('Backend is offline or Supabase schema is not ready.')
-        }
-      }
-    }
-
-    syncDeviceStates()
-    const intervalId = window.setInterval(syncDeviceStates, 5000)
-
-    return () => {
-      cancelled = true
-      window.clearInterval(intervalId)
-    }
-  }, [])
+  const devices = useMemo(() => {
+    const stateByDeviceId = new Map(deviceStates.map((deviceState) => [deviceState.deviceId, deviceState]))
+    return initialDevices.map((device) => {
+      const deviceState = stateByDeviceId.get(device.id)
+      return deviceState ? applyDeviceStatus(device, Boolean(deviceState.desiredState)) : device
+    })
+  }, [deviceStates])
+  const realtimeLabel =
+    connectionState === 'connected'
+      ? 'Realtime connected'
+      : connectionState === 'error'
+        ? 'Realtime unavailable'
+        : 'Realtime reconnecting'
 
   async function toggleDevice(deviceId) {
     const selectedDevice = devices.find((device) => device.id === deviceId)
@@ -66,11 +48,7 @@ function DeviceControlCenter() {
 
     try {
       const deviceState = await commandDevice(deviceId, nextStatus)
-      setDevices((currentDevices) =>
-        currentDevices.map((device) =>
-          device.id === deviceId ? applyDeviceStatus(device, Boolean(deviceState.desiredState)) : device,
-        ),
-      )
+      updateDeviceState(deviceState)
       setDeviceFeedback(deviceState.mqttPublished ? '' : 'Saved to database, but MQTT broker is not connected.')
     } catch (error) {
       if (error.status === 401 || error.status === 403) {
@@ -98,10 +76,10 @@ function DeviceControlCenter() {
         </div>
         <span>
           <Wifi size={16} aria-hidden="true" />
-          MQTT via Spring Boot
+          {realtimeLabel}
         </span>
       </div>
-      {deviceFeedback && <div className="device-feedback">{deviceFeedback}</div>}
+      {(deviceFeedback || realtimeError) && <div className="device-feedback">{deviceFeedback || realtimeError}</div>}
 
       <div className="device-grid">
         {devices.map((device) => {

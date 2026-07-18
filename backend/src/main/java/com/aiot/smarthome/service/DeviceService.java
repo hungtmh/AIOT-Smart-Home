@@ -4,6 +4,7 @@ import com.aiot.smarthome.dto.DeviceStateResponse;
 import com.aiot.smarthome.model.DeviceDefinition;
 import com.aiot.smarthome.model.DeviceState;
 import com.aiot.smarthome.mqtt.MqttCommandPublisher;
+import com.aiot.smarthome.realtime.RealtimeHub;
 import com.aiot.smarthome.repository.DeviceRepository;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -15,11 +16,17 @@ public class DeviceService {
   private final DeviceCatalog catalog;
   private final DeviceRepository repository;
   private final MqttCommandPublisher mqttCommandPublisher;
+  private final RealtimeHub realtimeHub;
 
-  public DeviceService(DeviceCatalog catalog, DeviceRepository repository, MqttCommandPublisher mqttCommandPublisher) {
+  public DeviceService(
+      DeviceCatalog catalog,
+      DeviceRepository repository,
+      MqttCommandPublisher mqttCommandPublisher,
+      RealtimeHub realtimeHub) {
     this.catalog = catalog;
     this.repository = repository;
     this.mqttCommandPublisher = mqttCommandPublisher;
+    this.realtimeHub = realtimeHub;
   }
 
   public List<DeviceStateResponse> getDeviceStates() {
@@ -38,7 +45,9 @@ public class DeviceService {
     DeviceState nextState = repository.setDesiredState(device, state);
     boolean mqttPublished = mqttCommandPublisher.publishDeviceState(device.id(), state);
     repository.addControlLog(device.id(), state, "web", mqttPublished ? "MQTT_PUBLISHED" : "MQTT_NOT_CONNECTED");
-    return DeviceStateResponse.from(nextState, device.name(), device.type(), mqttPublished);
+    DeviceStateResponse response = DeviceStateResponse.from(nextState, device.name(), device.type(), mqttPublished);
+    realtimeHub.broadcastDeviceState(response);
+    return response;
   }
 
   public DeviceStateResponse toggleDevice(String deviceId) {
@@ -49,8 +58,9 @@ public class DeviceService {
 
   public void handleReportedState(String deviceId, boolean state) {
     DeviceDefinition device = requireDevice(deviceId);
-    repository.setReportedState(device, state);
+    DeviceState nextState = repository.setReportedState(device, state);
     repository.addControlLog(device.id(), state, "esp32", "STATE_REPORTED");
+    realtimeHub.broadcastDeviceState(DeviceStateResponse.from(nextState, device.name(), device.type(), true));
   }
 
   private DeviceStateResponse toResponse(DeviceState state, boolean mqttPublished) {

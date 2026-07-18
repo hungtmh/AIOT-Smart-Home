@@ -4,7 +4,7 @@ Du an demo AIoT Smart Home voi luong dieu khien thiet bi that/gia lap:
 
 ```text
 React frontend
-  -> Spring Boot backend
+  <-> Spring Boot backend (REST commands + WebSocket realtime events)
     -> Supabase Auth JWT
     -> Supabase PostgreSQL
     -> HiveMQ MQTT broker
@@ -230,6 +230,8 @@ Sau do bam LED/servo/buzzer/pump tren frontend. Wokwi se nhan message:
 10. ESP32/Wokwi dieu khien dung thiet bi
 11. ESP32/Wokwi publish reported state ve MQTT state topic
 12. Backend nhan state va cap nhat reported_state
+13. Backend broadcast `DEVICE_STATE` qua WebSocket `/ws/realtime`
+14. Frontend nhan event va cap nhat giao dien ngay, khong polling 5 giay
 ```
 
 ## 11. API chinh
@@ -252,7 +254,29 @@ Content-Type: application/json
 
 `reportedState` la trang thai thiet bi/Wokwi bao ve.
 
-## 12. Loi thuong gap
+## 12. WebSocket realtime
+
+Frontend mo mot ket noi:
+
+```text
+ws://localhost:8080/ws/realtime
+```
+
+Ngay khi ket noi, frontend gui access token Supabase trong message dau tien:
+
+```json
+{ "type": "AUTH", "token": "<access-token>" }
+```
+
+Backend verify JWT, gui snapshot hien tai, sau do tu dong day cac event:
+
+```text
+DEVICE_SNAPSHOT  Toan bo trang thai thiet bi luc moi ket noi
+DEVICE_STATE     desiredState/reportedState vua thay doi
+TELEMETRY        temperature/humidity/smokePpm moi nhat
+```
+
+## 13. Loi thuong gap
 
 ### Port 8080 bi chiem
 
@@ -337,7 +361,7 @@ buzzer
 pump
 ```
 
-## 13. Lenh build kiem tra
+## 14. Lenh build kiem tra
 
 Backend:
 

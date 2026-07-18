@@ -279,7 +279,7 @@ export const settingsGroups = [
     fields: [
       { label: 'Device ID', value: 'ESP32S3-LAB-01' },
       { label: 'Wi-Fi status', value: 'Connected' },
-      { label: 'Heartbeat interval', value: '5 seconds' },
+      { label: 'Telemetry interval', value: '1 second + WebSocket' },
     ],
   },
   {

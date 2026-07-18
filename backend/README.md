@@ -1,6 +1,7 @@
 # AIOT Smart Home Backend
 
 Spring Boot backend cho luong dieu khien LED, servo, buzzer va mini water pump qua MQTT, luu trang thai vao Supabase PostgreSQL va bao ve API bang Supabase JWT.
+Backend day trang thai thiet bi va telemetry sang frontend bang WebSocket, khong can frontend polling dinh ky.
 
 Doc README goc cua repo truoc:
 
@@ -70,6 +71,22 @@ Content-Type: application/json
 
 { "state": true }
 ```
+
+## WebSocket realtime
+
+Endpoint:
+
+```text
+ws://localhost:8080/ws/realtime
+```
+
+Message dau tien phai la JWT Supabase:
+
+```json
+{ "type": "AUTH", "token": "<access-token>" }
+```
+
+Sau khi xac thuc, backend gui `AUTHENTICATED`, `DEVICE_SNAPSHOT`, `DEVICE_STATE` va `TELEMETRY`.
 
 ## Kiem tra build
 

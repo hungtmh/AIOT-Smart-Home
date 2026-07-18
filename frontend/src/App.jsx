@@ -8,6 +8,7 @@ import LoginPage from './components/LoginPage'
 import SettingsPage from './components/SettingsPage'
 import Sidebar from './components/Sidebar'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { RealtimeProvider } from './realtime/RealtimeProvider'
 
 const { ShieldCheck, X } = icons
 
@@ -106,35 +107,37 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar activeNav={activeNav} email={session.user.email} onNavigate={setActiveNav} onSignOut={handleSignOut} />
+    <RealtimeProvider session={session}>
+      <div className="app-shell">
+        <Sidebar activeNav={activeNav} email={session.user.email} onNavigate={setActiveNav} onSignOut={handleSignOut} />
 
-      <main className="dashboard">
-        {toastVisible && (
-          <div className="toast" role="status">
-            <ShieldCheck size={18} aria-hidden="true" />
-            <div>
-              <strong>System Notification</strong>
-              <span>Successfully signed in</span>
+        <main className="dashboard">
+          {toastVisible && (
+            <div className="toast" role="status">
+              <ShieldCheck size={18} aria-hidden="true" />
+              <div>
+                <strong>System Notification</strong>
+                <span>Successfully signed in</span>
+              </div>
+              <button type="button" aria-label="Close notification" onClick={() => setToastVisible(false)}>
+                <X size={17} aria-hidden="true" />
+              </button>
             </div>
-            <button type="button" aria-label="Close notification" onClick={() => setToastVisible(false)}>
-              <X size={17} aria-hidden="true" />
-            </button>
-          </div>
-        )}
+          )}
 
-        {activeNav === 'history' && <HistoryPage activeTab={activeHistoryTab} onTabChange={setActiveHistoryTab} />}
-        {activeNav === 'automation' && <AutomationPage />}
-        {activeNav === 'settings' && <SettingsPage email={email} />}
-        {activeNav === 'dashboard' && (
-          <DashboardPage
-            autoMode={autoMode}
-            lastUpdated={lastUpdated}
-            onToggleAutoMode={() => setAutoMode((current) => !current)}
-          />
-        )}
-      </main>
-    </div>
+          {activeNav === 'history' && <HistoryPage activeTab={activeHistoryTab} onTabChange={setActiveHistoryTab} />}
+          {activeNav === 'automation' && <AutomationPage />}
+          {activeNav === 'settings' && <SettingsPage email={email} />}
+          {activeNav === 'dashboard' && (
+            <DashboardPage
+              autoMode={autoMode}
+              lastUpdated={lastUpdated}
+              onToggleAutoMode={() => setAutoMode((current) => !current)}
+            />
+          )}
+        </main>
+      </div>
+    </RealtimeProvider>
   )
 }
 
