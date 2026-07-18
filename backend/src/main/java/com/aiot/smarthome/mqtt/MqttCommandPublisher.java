@@ -1,9 +1,12 @@
 package com.aiot.smarthome.mqtt;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.aiot.smarthome.config.AiotProperties;
 import com.aiot.smarthome.model.DeviceDefinition;
 import com.aiot.smarthome.service.DeviceCatalog;
 import com.aiot.smarthome.service.DeviceService;
+import com.aiot.smarthome.service.TelemetryService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
@@ -28,15 +31,21 @@ public class MqttCommandPublisher implements MqttCallback {
   private final AiotProperties properties;
   private final DeviceCatalog deviceCatalog;
   private final DeviceService deviceService;
+  private final TelemetryService telemetryService;
+  private final ObjectMapper objectMapper;
   private MqttClient client;
 
   public MqttCommandPublisher(
       AiotProperties properties,
       DeviceCatalog deviceCatalog,
-      @Lazy DeviceService deviceService) {
+      @Lazy DeviceService deviceService,
+      TelemetryService telemetryService,
+      ObjectMapper objectMapper) {
     this.properties = properties;
     this.deviceCatalog = deviceCatalog;
     this.deviceService = deviceService;
+    this.telemetryService = telemetryService;
+    this.objectMapper = objectMapper;
   }
 
   @PostConstruct
@@ -50,7 +59,8 @@ public class MqttCommandPublisher implements MqttCallback {
       for (DeviceDefinition device : deviceCatalog.all()) {
         client.subscribe(stateTopic(device.id()), 1);
       }
-      logger.info("Connected to MQTT broker {} and subscribed to device state topics", mqtt.brokerUri());
+      client.subscribe(mqtt.telemetryTopic(), 1);
+      logger.info("Connected to MQTT broker {} and subscribed to device state + telemetry topics", mqtt.brokerUri());
     } catch (Exception exception) {
       logger.warn("MQTT is not connected yet: {}", exception.getMessage());
     }
@@ -93,6 +103,11 @@ public class MqttCommandPublisher implements MqttCallback {
   @Override
   public void messageArrived(String topic, MqttMessage message) {
     String payload = new String(message.getPayload(), StandardCharsets.UTF_8).trim();
+    if (properties.mqtt().telemetryTopic().equals(topic)) {
+      handleTelemetryPayload(payload);
+      return;
+    }
+
     String deviceId = deviceIdFromStateTopic(topic);
     if (deviceId == null) {
       logger.warn("Ignoring message from unknown topic {}", topic);
@@ -149,6 +164,19 @@ public class MqttCommandPublisher implements MqttCallback {
     }
 
     return null;
+  }
+
+  private void handleTelemetryPayload(String payload) {
+    try {
+      JsonNode json = objectMapper.readTree(payload);
+      double temperature = json.path("temperature").asDouble();
+      double humidity = json.path("humidity").asDouble();
+      int smokePpm = json.path("smokePpm").asInt();
+      telemetryService.handleTelemetry(temperature, humidity, smokePpm);
+      logger.info("Received telemetry temperature={} humidity={} smokePpm={}", temperature, humidity, smokePpm);
+    } catch (Exception exception) {
+      logger.warn("Ignoring invalid telemetry payload '{}': {}", payload, exception.getMessage());
+    }
   }
 
   private MqttConnectOptions connectOptions(AiotProperties.Mqtt mqtt) {

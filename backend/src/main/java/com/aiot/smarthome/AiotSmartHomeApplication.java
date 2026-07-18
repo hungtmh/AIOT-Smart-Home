@@ -38,6 +38,7 @@ public class AiotSmartHomeApplication {
     setSpringProperty(env, "aiot.mqtt.password", "MQTT_PASSWORD");
     setSpringProperty(env, "aiot.mqtt.command-topic-pattern", "MQTT_COMMAND_TOPIC_PATTERN");
     setSpringProperty(env, "aiot.mqtt.state-topic-pattern", "MQTT_STATE_TOPIC_PATTERN");
+    setSpringProperty(env, "aiot.mqtt.telemetry-topic", "MQTT_TELEMETRY_TOPIC");
   }
 
   private static Map<String, Object> loadLocalEnv(Map<String, String> env) {
@@ -54,6 +55,7 @@ public class AiotSmartHomeApplication {
     putIfPresent(properties, "aiot.mqtt.password", env, "MQTT_PASSWORD");
     putIfPresent(properties, "aiot.mqtt.command-topic-pattern", env, "MQTT_COMMAND_TOPIC_PATTERN");
     putIfPresent(properties, "aiot.mqtt.state-topic-pattern", env, "MQTT_STATE_TOPIC_PATTERN");
+    putIfPresent(properties, "aiot.mqtt.telemetry-topic", env, "MQTT_TELEMETRY_TOPIC");
 
     return properties;
   }

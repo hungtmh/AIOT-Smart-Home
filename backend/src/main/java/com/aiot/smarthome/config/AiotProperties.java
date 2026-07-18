@@ -16,6 +16,7 @@ public record AiotProperties(Auth auth, Cors cors, Mqtt mqtt) {
       String username,
       String password,
       String commandTopicPattern,
-      String stateTopicPattern) {
+      String stateTopicPattern,
+      String telemetryTopic) {
   }
 }

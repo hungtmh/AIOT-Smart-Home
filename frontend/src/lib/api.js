@@ -77,3 +77,7 @@ export function commandDevice(deviceId, state) {
     body: JSON.stringify({ state }),
   })
 }
+
+export function getLatestTelemetry() {
+  return request('/api/telemetry/latest')
+}

@@ -22,6 +22,14 @@ create table if not exists control_logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists telemetry_readings (
+  id bigserial primary key,
+  temperature numeric(5, 2) not null,
+  humidity numeric(5, 2) not null,
+  smoke_ppm integer not null,
+  measured_at timestamptz not null default now()
+);
+
 insert into devices (id, name, type)
 values
   ('led', 'LED Light', 'relay'),

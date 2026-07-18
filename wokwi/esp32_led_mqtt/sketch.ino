@@ -2,6 +2,7 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
+#include <DHTesp.h>
 
 const char* WIFI_SSID = "Wokwi-GUEST";
 const char* WIFI_PASSWORD = "";
@@ -22,11 +23,15 @@ const char* BUZZER_COMMAND_TOPIC = "aiot/esp32-s3/device/buzzer/set";
 const char* BUZZER_STATE_TOPIC = "aiot/esp32-s3/device/buzzer/state";
 const char* PUMP_COMMAND_TOPIC = "aiot/esp32-s3/device/pump/set";
 const char* PUMP_STATE_TOPIC = "aiot/esp32-s3/device/pump/state";
+const char* TELEMETRY_TOPIC = "aiot/esp32-s3/telemetry";
 
 const int LED_PIN = 2;
+const int DHT_PIN = 15;
 const int SERVO_PIN = 18;
 const int BUZZER_PIN = 19;
 const int PUMP_PIN = 21;
+const int SMOKE_DO_PIN = 25;
+const int SMOKE_AO_PIN = 34;
 
 bool ledState = false;
 bool servoState = false;
@@ -36,6 +41,8 @@ bool pumpState = false;
 WiFiClientSecure wifiClient;
 PubSubClient mqtt(wifiClient);
 Servo valveServo;
+DHTesp dhtSensor;
+unsigned long lastTelemetryMs = 0;
 
 bool payloadToState(String message, bool& state) {
   message.trim();
@@ -106,6 +113,51 @@ void publishAllStates() {
   publishDeviceState(PUMP_STATE_TOPIC, pumpState);
 }
 
+void publishTelemetry() {
+  TempAndHumidity reading = dhtSensor.getTempAndHumidity();
+  int smokeRaw = analogRead(SMOKE_AO_PIN);
+  int smokePpm = map(smokeRaw, 0, 4095, 0, 100);
+  int smokeDigital = digitalRead(SMOKE_DO_PIN);
+
+  if (isnan(reading.temperature) || isnan(reading.humidity)) {
+    Serial.println("[SENSOR] DHT read failed, skip telemetry");
+    return;
+  }
+
+  char payload[128];
+  snprintf(
+      payload,
+      sizeof(payload),
+      "{\"temperature\":%.1f,\"humidity\":%.1f,\"smokePpm\":%d}",
+      reading.temperature,
+      reading.humidity,
+      smokePpm);
+
+  mqtt.publish(TELEMETRY_TOPIC, payload, true);
+  Serial.print("[SENSOR] Temp=");
+  Serial.print(reading.temperature, 1);
+  Serial.print("C Humidity=");
+  Serial.print(reading.humidity, 1);
+  Serial.print("% SmokeRaw=");
+  Serial.print(smokeRaw);
+  Serial.print(" SmokePPM=");
+  Serial.print(smokePpm);
+  Serial.print(" DO=");
+  Serial.println(smokeDigital == LOW ? "ALERT" : "SAFE");
+  Serial.print("[MQTT] Published telemetry: ");
+  Serial.println(payload);
+}
+
+void publishTelemetryEvery(unsigned long intervalMs) {
+  unsigned long now = millis();
+  if (now - lastTelemetryMs < intervalMs) {
+    return;
+  }
+
+  lastTelemetryMs = now;
+  publishTelemetry();
+}
+
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
   String message;
   for (unsigned int i = 0; i < length; i++) {
@@ -166,6 +218,7 @@ void connectMqtt() {
       mqtt.subscribe(PUMP_COMMAND_TOPIC);
       Serial.println("[MQTT] Subscribed to device command topics");
       publishAllStates();
+      publishTelemetry();
     } else {
       Serial.print("failed, state=");
       Serial.println(mqtt.state());
@@ -179,12 +232,14 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(PUMP_PIN, OUTPUT);
+  pinMode(SMOKE_DO_PIN, INPUT);
   digitalWrite(LED_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
   digitalWrite(PUMP_PIN, LOW);
 
   valveServo.attach(SERVO_PIN);
   valveServo.write(0);
+  dhtSensor.setup(DHT_PIN, DHTesp::DHT22);
 
   wifiClient.setInsecure();
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
@@ -204,4 +259,5 @@ void loop() {
   }
 
   mqtt.loop();
+  publishTelemetryEvery(5000);
 }

@@ -8,7 +8,9 @@
     { "type": "wokwi-resistor", "id": "r1", "top": -14.4, "left": 112.8, "attrs": { "value": "220" } },
     { "type": "wokwi-servo", "id": "servo1", "top": -144, "left": 312, "attrs": {} },
     { "type": "wokwi-buzzer", "id": "buzzer1", "top": 120, "left": 286, "attrs": { "volume": "0.1" } },
-    { "type": "wokwi-dc-motor", "id": "pump1", "top": 184, "left": 145, "attrs": {} }
+    { "type": "wokwi-dc-motor", "id": "pump1", "top": 184, "left": 145, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -134.1, "left": -163.2, "attrs": { "temperature": "28.4", "humidity": "64" } },
+    { "type": "wokwi-gas-sensor", "id": "gas1", "top": 121.7, "left": -177.4, "attrs": { "ppm": "180", "threshold": "4.4" } }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
@@ -22,7 +24,14 @@
     [ "esp:19", "buzzer1:1", "orange", [] ],
     [ "buzzer1:2", "esp:GND.1", "black", [] ],
     [ "esp:21", "pump1:1", "cyan", [] ],
-    [ "pump1:2", "esp:GND.1", "black", [] ]
+    [ "pump1:2", "esp:GND.1", "black", [] ],
+    [ "esp:15", "dht1:SDA", "green", [] ],
+    [ "esp:3V3", "dht1:VCC", "red", [] ],
+    [ "dht1:GND", "esp:GND.1", "black", [] ],
+    [ "esp:34", "gas1:AO", "green", [] ],
+    [ "esp:25", "gas1:DO", "yellow", [] ],
+    [ "esp:5V", "gas1:VCC", "red", [] ],
+    [ "gas1:GND", "esp:GND.1", "black", [] ]
   ],
   "dependencies": {}
 }

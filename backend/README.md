@@ -30,6 +30,7 @@ MQTT_USERNAME=<mqtt-username>
 MQTT_PASSWORD=<mqtt-password>
 MQTT_COMMAND_TOPIC_PATTERN=aiot/esp32-s3/device/%s/set
 MQTT_STATE_TOPIC_PATTERN=aiot/esp32-s3/device/%s/state
+MQTT_TELEMETRY_TOPIC=aiot/esp32-s3/telemetry
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
@@ -63,6 +64,7 @@ GET /api/auth/me
 GET /api/devices
 GET /api/devices/led
 GET /api/devices/pump
+GET /api/telemetry/latest
 POST /api/devices/{deviceId}/command
 Content-Type: application/json
 
