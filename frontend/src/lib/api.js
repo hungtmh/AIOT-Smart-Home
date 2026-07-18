@@ -56,11 +56,23 @@ async function request(path, options = {}) {
 }
 
 export function getLedState() {
-  return request('/api/devices/led')
+  return getDeviceState('led')
 }
 
 export function commandLed(state) {
-  return request('/api/devices/led/command', {
+  return commandDevice('led', state)
+}
+
+export function getDeviceStates() {
+  return request('/api/devices')
+}
+
+export function getDeviceState(deviceId) {
+  return request(`/api/devices/${deviceId}`)
+}
+
+export function commandDevice(deviceId, state) {
+  return request(`/api/devices/${deviceId}/command`, {
     method: 'POST',
     body: JSON.stringify({ state }),
   })

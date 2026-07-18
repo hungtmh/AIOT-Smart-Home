@@ -24,5 +24,5 @@ aiot:
     client-id: ${MQTT_CLIENT_ID:aiot-spring-backend}
     username: ${MQTT_USERNAME:}
     password: ${MQTT_PASSWORD:}
-    command-topic: ${MQTT_LED_COMMAND_TOPIC:aiot/esp32-s3/device/led/set}
-    state-topic: ${MQTT_LED_STATE_TOPIC:aiot/esp32-s3/device/led/state}
+    command-topic-pattern: ${MQTT_COMMAND_TOPIC_PATTERN:aiot/esp32-s3/device/%s/set}
+    state-topic-pattern: ${MQTT_STATE_TOPIC_PATTERN:aiot/esp32-s3/device/%s/state}

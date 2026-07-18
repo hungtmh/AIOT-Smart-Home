@@ -36,8 +36,8 @@ public class AiotSmartHomeApplication {
     setSpringProperty(env, "aiot.mqtt.broker-uri", "MQTT_BROKER_URI");
     setSpringProperty(env, "aiot.mqtt.username", "MQTT_USERNAME");
     setSpringProperty(env, "aiot.mqtt.password", "MQTT_PASSWORD");
-    setSpringProperty(env, "aiot.mqtt.command-topic", "MQTT_LED_COMMAND_TOPIC");
-    setSpringProperty(env, "aiot.mqtt.state-topic", "MQTT_LED_STATE_TOPIC");
+    setSpringProperty(env, "aiot.mqtt.command-topic-pattern", "MQTT_COMMAND_TOPIC_PATTERN");
+    setSpringProperty(env, "aiot.mqtt.state-topic-pattern", "MQTT_STATE_TOPIC_PATTERN");
   }
 
   private static Map<String, Object> loadLocalEnv(Map<String, String> env) {
@@ -52,8 +52,8 @@ public class AiotSmartHomeApplication {
     putIfPresent(properties, "aiot.mqtt.broker-uri", env, "MQTT_BROKER_URI");
     putIfPresent(properties, "aiot.mqtt.username", env, "MQTT_USERNAME");
     putIfPresent(properties, "aiot.mqtt.password", env, "MQTT_PASSWORD");
-    putIfPresent(properties, "aiot.mqtt.command-topic", env, "MQTT_LED_COMMAND_TOPIC");
-    putIfPresent(properties, "aiot.mqtt.state-topic", env, "MQTT_LED_STATE_TOPIC");
+    putIfPresent(properties, "aiot.mqtt.command-topic-pattern", env, "MQTT_COMMAND_TOPIC_PATTERN");
+    putIfPresent(properties, "aiot.mqtt.state-topic-pattern", env, "MQTT_STATE_TOPIC_PATTERN");
 
     return properties;
   }

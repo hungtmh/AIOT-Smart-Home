@@ -23,9 +23,17 @@ create table if not exists control_logs (
 );
 
 insert into devices (id, name, type)
-values ('led', 'LED Light', 'relay')
+values
+  ('led', 'LED Light', 'relay'),
+  ('servo', 'Servo Motor', 'servo'),
+  ('buzzer', 'Buzzer Alarm', 'buzzer'),
+  ('pump', 'Mini Water Pump', 'pump')
 on conflict (id) do nothing;
 
 insert into device_states (device_id, desired_state, reported_state)
-values ('led', false, false)
+values
+  ('led', false, false),
+  ('servo', false, false),
+  ('buzzer', false, false),
+  ('pump', false, false)
 on conflict (device_id) do nothing;

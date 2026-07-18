@@ -5,14 +5,24 @@
   "parts": [
     { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
     { "type": "wokwi-led", "id": "led1", "top": -61.2, "left": 167, "attrs": { "color": "red" } },
-    { "type": "wokwi-resistor", "id": "r1", "top": -14.4, "left": 112.8, "attrs": { "value": "220" } }
+    { "type": "wokwi-resistor", "id": "r1", "top": -14.4, "left": 112.8, "attrs": { "value": "220" } },
+    { "type": "wokwi-servo", "id": "servo1", "top": -144, "left": 312, "attrs": {} },
+    { "type": "wokwi-buzzer", "id": "buzzer1", "top": 120, "left": 286, "attrs": { "volume": "0.1" } },
+    { "type": "wokwi-dc-motor", "id": "pump1", "top": 184, "left": 145, "attrs": {} }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ],
     [ "esp:2", "r1:1", "green", [] ],
     [ "r1:2", "led1:A", "green", [] ],
-    [ "led1:C", "esp:GND.1", "black", [] ]
+    [ "led1:C", "esp:GND.1", "black", [] ],
+    [ "esp:18", "servo1:PWM", "purple", [] ],
+    [ "esp:5V", "servo1:V+", "red", [] ],
+    [ "esp:GND.1", "servo1:GND", "black", [] ],
+    [ "esp:19", "buzzer1:1", "orange", [] ],
+    [ "buzzer1:2", "esp:GND.1", "black", [] ],
+    [ "esp:21", "pump1:1", "cyan", [] ],
+    [ "pump1:2", "esp:GND.1", "black", [] ]
   ],
   "dependencies": {}
 }

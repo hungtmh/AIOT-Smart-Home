@@ -11,7 +11,7 @@ export const initialDevices = [
   { id: 'led', name: 'LED Light', description: 'Relay CH1', icon: 'Lightbulb', status: true, metric: 'ON', tone: 'blue' },
   { id: 'servo', name: 'Servo Motor', description: 'Open / close valve', icon: 'SlidersHorizontal', status: true, metric: 'OPEN', tone: 'indigo' },
   { id: 'buzzer', name: 'Buzzer Alarm', description: 'Fire alert output', icon: 'BellRing', status: false, metric: 'OFF', tone: 'amber' },
-  { id: 'fan', name: 'Ventilation Fan', description: 'Relay CH2 mock', icon: 'Fan', status: false, metric: 'OFF', tone: 'cyan' },
+  { id: 'pump', name: 'Mini Water Pump', description: 'Mini Water Pump 5VDC', icon: 'Droplets', status: false, metric: 'OFF', tone: 'cyan' },
 ]
 
 export const seriesLegend = [
@@ -175,7 +175,7 @@ export const historyData = {
       ['08/11/2025, 03:02:55', 'Servo Motor', 'Open', 'Voice Command', 'Success', '0.8s'],
       ['08/11/2025, 03:01:44', 'Buzzer Alarm', 'OFF', 'Web Dashboard', 'Success', '0.5s'],
       ['08/11/2025, 03:00:36', 'LED Light', 'OFF', 'Voice Command', 'Success', '0.9s'],
-      ['08/11/2025, 02:58:20', 'Ventilation Fan', 'ON', 'Automation', 'Success', '0.7s'],
+      ['08/11/2025, 02:58:20', 'Mini Water Pump', 'ON', 'Automation', 'Success', '0.7s'],
     ],
   },
   voice: {
@@ -213,13 +213,13 @@ export const recentActivityRows = [
 export const automationRules = [
   {
     id: 'high-temperature',
-    name: 'High temperature ventilation',
-    description: 'Turn on ventilation fan when room temperature is too high.',
+    name: 'High temperature pump assist',
+    description: 'Turn on mini water pump when room temperature is too high.',
     sensor: 'Temperature',
     operator: '>',
     threshold: 35,
     unit: 'C',
-    action: 'Turn ventilation fan ON',
+    action: 'Turn mini water pump ON',
     enabled: true,
   },
   {

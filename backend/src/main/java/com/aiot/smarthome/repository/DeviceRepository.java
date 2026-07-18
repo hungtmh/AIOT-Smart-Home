@@ -1,9 +1,14 @@
 package com.aiot.smarthome.repository;
 
+import com.aiot.smarthome.model.DeviceDefinition;
 import com.aiot.smarthome.model.DeviceState;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -11,29 +16,29 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class LedRepository {
-  private static final Logger logger = LoggerFactory.getLogger(LedRepository.class);
-  private static final String LED_DEVICE_ID = "led";
+public class DeviceRepository {
+  private static final Logger logger = LoggerFactory.getLogger(DeviceRepository.class);
 
   private final JdbcTemplate jdbcTemplate;
-  private boolean desiredLedState;
-  private boolean reportedLedState;
-  private OffsetDateTime desiredUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC);
-  private OffsetDateTime reportedUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC);
+  private final Map<String, DeviceState> memoryStates = new ConcurrentHashMap<>();
   private boolean databaseAvailable = true;
   private boolean databaseWarningLogged;
 
-  public LedRepository(JdbcTemplate jdbcTemplate) {
+  public DeviceRepository(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
   }
 
-  public DeviceState findLedState() {
+  public List<DeviceState> findAllStates(Collection<DeviceDefinition> devices) {
+    return devices.stream().map(this::findState).toList();
+  }
+
+  public DeviceState findState(DeviceDefinition device) {
     if (!databaseAvailable) {
-      return memoryState();
+      return memoryState(device.id());
     }
 
     try {
-      ensureLedDevice();
+      ensureDevice(device);
 
       DeviceState state = jdbcTemplate.queryForObject(
           """
@@ -47,29 +52,28 @@ public class LedRepository {
               rs.getBoolean("reported_state"),
               toOffsetDateTime(rs.getTimestamp("updated_at")),
               toOffsetDateTime(rs.getTimestamp("reported_at"))),
-          LED_DEVICE_ID);
+          device.id());
 
       if (state != null) {
-        syncMemoryState(state);
+        memoryStates.put(device.id(), state);
         return state;
       }
     } catch (DataAccessException exception) {
       warnDatabaseFallback(exception);
     }
 
-    return memoryState();
+    return memoryState(device.id());
   }
 
-  public DeviceState setDesiredLedState(boolean state) {
-    desiredLedState = state;
-    desiredUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC);
+  public DeviceState setDesiredState(DeviceDefinition device, boolean state) {
+    updateMemoryDesired(device.id(), state);
 
     if (!databaseAvailable) {
-      return memoryState();
+      return memoryState(device.id());
     }
 
     try {
-      ensureLedDevice();
+      ensureDevice(device);
 
       jdbcTemplate.update(
           """
@@ -78,25 +82,24 @@ public class LedRepository {
           where device_id = ?
           """,
           state,
-          LED_DEVICE_ID);
+          device.id());
 
-      return findLedState();
+      return findState(device);
     } catch (DataAccessException exception) {
       warnDatabaseFallback(exception);
-      return memoryState();
+      return memoryState(device.id());
     }
   }
 
-  public DeviceState setReportedLedState(boolean state) {
-    reportedLedState = state;
-    reportedUpdatedAt = OffsetDateTime.now(ZoneOffset.UTC);
+  public DeviceState setReportedState(DeviceDefinition device, boolean state) {
+    updateMemoryReported(device.id(), state);
 
     if (!databaseAvailable) {
-      return memoryState();
+      return memoryState(device.id());
     }
 
     try {
-      ensureLedDevice();
+      ensureDevice(device);
 
       jdbcTemplate.update(
           """
@@ -105,29 +108,27 @@ public class LedRepository {
           where device_id = ?
           """,
           state,
-          LED_DEVICE_ID);
+          device.id());
 
-      return findLedState();
+      return findState(device);
     } catch (DataAccessException exception) {
       warnDatabaseFallback(exception);
-      return memoryState();
+      return memoryState(device.id());
     }
   }
 
-  public void addControlLog(boolean requestedState, String source, String result) {
+  public void addControlLog(String deviceId, boolean requestedState, String source, String result) {
     if (!databaseAvailable) {
       return;
     }
 
     try {
-      ensureLedDevice();
-
       jdbcTemplate.update(
           """
           insert into control_logs (device_id, requested_state, source, result)
           values (?, ?, ?, ?)
           """,
-          LED_DEVICE_ID,
+          deviceId,
           requestedState,
           source,
           result);
@@ -136,16 +137,16 @@ public class LedRepository {
     }
   }
 
-  private void ensureLedDevice() {
+  private void ensureDevice(DeviceDefinition device) {
     jdbcTemplate.update(
         """
         insert into devices (id, name, type)
         values (?, ?, ?)
-        on conflict (id) do nothing
+        on conflict (id) do update set name = excluded.name, type = excluded.type
         """,
-        LED_DEVICE_ID,
-        "LED Light",
-        "relay");
+        device.id(),
+        device.name(),
+        device.type());
 
     jdbcTemplate.update(
         """
@@ -153,7 +154,7 @@ public class LedRepository {
         values (?, false, false)
         on conflict (device_id) do nothing
         """,
-        LED_DEVICE_ID);
+        device.id());
   }
 
   private OffsetDateTime toOffsetDateTime(Timestamp timestamp) {
@@ -164,27 +165,38 @@ public class LedRepository {
     return timestamp.toInstant().atOffset(ZoneOffset.UTC);
   }
 
-  private DeviceState memoryState() {
-    return new DeviceState(
-        LED_DEVICE_ID,
-        desiredLedState,
-        reportedLedState,
-        desiredUpdatedAt,
-        reportedUpdatedAt);
+  private DeviceState memoryState(String deviceId) {
+    return memoryStates.computeIfAbsent(deviceId, id -> {
+      OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+      return new DeviceState(id, false, false, now, now);
+    });
   }
 
-  private void syncMemoryState(DeviceState state) {
-    desiredLedState = state.desiredState();
-    reportedLedState = state.reportedState();
-    desiredUpdatedAt = state.updatedAt();
-    reportedUpdatedAt = state.reportedAt();
+  private void updateMemoryDesired(String deviceId, boolean state) {
+    DeviceState current = memoryState(deviceId);
+    memoryStates.put(deviceId, new DeviceState(
+        deviceId,
+        state,
+        current.reportedState(),
+        OffsetDateTime.now(ZoneOffset.UTC),
+        current.reportedAt()));
+  }
+
+  private void updateMemoryReported(String deviceId, boolean state) {
+    DeviceState current = memoryState(deviceId);
+    memoryStates.put(deviceId, new DeviceState(
+        deviceId,
+        current.desiredState(),
+        state,
+        current.updatedAt(),
+        OffsetDateTime.now(ZoneOffset.UTC)));
   }
 
   private void warnDatabaseFallback(DataAccessException exception) {
     databaseAvailable = false;
 
     if (!databaseWarningLogged) {
-      logger.warn("Database is unavailable; using in-memory LED state until the DB connection is fixed: {}",
+      logger.warn("Database is unavailable; using in-memory device states until the DB connection is fixed: {}",
           exception.getMostSpecificCause().getMessage());
       databaseWarningLogged = true;
     }

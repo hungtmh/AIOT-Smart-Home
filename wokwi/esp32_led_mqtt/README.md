@@ -1,10 +1,12 @@
-# Wokwi ESP32 LED MQTT Simulator
+# Wokwi ESP32 MQTT Device Simulator
 
-This folder mirrors the real ESP32 LED flow, but uses Wokwi's virtual Wi-Fi:
+This folder mirrors the ESP32 device flow, but uses Wokwi's virtual Wi-Fi:
 
 ```text
-React -> Spring Boot -> HiveMQ topic led/set -> Wokwi ESP32 LED
-Wokwi ESP32 -> HiveMQ topic led/state -> Spring Boot -> Supabase
+React -> Spring Boot -> HiveMQ topic device/{id}/set -> Wokwi ESP32
+Wokwi ESP32 -> HiveMQ topic device/{id}/state -> Spring Boot -> Supabase
 ```
+
+Supported device ids: `led`, `servo`, `buzzer`, `pump`.
 
 Use `sketch.ino`, `diagram.json`, and `libraries.txt` in a Wokwi ESP32 project.

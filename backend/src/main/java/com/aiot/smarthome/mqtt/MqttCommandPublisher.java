@@ -1,10 +1,13 @@
 package com.aiot.smarthome.mqtt;
 
 import com.aiot.smarthome.config.AiotProperties;
-import com.aiot.smarthome.service.LedService;
+import com.aiot.smarthome.model.DeviceDefinition;
+import com.aiot.smarthome.service.DeviceCatalog;
+import com.aiot.smarthome.service.DeviceService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.UUID;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -23,12 +26,17 @@ public class MqttCommandPublisher implements MqttCallback {
   private static final Logger logger = LoggerFactory.getLogger(MqttCommandPublisher.class);
 
   private final AiotProperties properties;
-  private final LedService ledService;
+  private final DeviceCatalog deviceCatalog;
+  private final DeviceService deviceService;
   private MqttClient client;
 
-  public MqttCommandPublisher(AiotProperties properties, @Lazy LedService ledService) {
+  public MqttCommandPublisher(
+      AiotProperties properties,
+      DeviceCatalog deviceCatalog,
+      @Lazy DeviceService deviceService) {
     this.properties = properties;
-    this.ledService = ledService;
+    this.deviceCatalog = deviceCatalog;
+    this.deviceService = deviceService;
   }
 
   @PostConstruct
@@ -39,14 +47,16 @@ public class MqttCommandPublisher implements MqttCallback {
       client = new MqttClient(mqtt.brokerUri(), clientId, new MemoryPersistence());
       client.setCallback(this);
       client.connect(connectOptions(mqtt));
-      client.subscribe(mqtt.stateTopic(), 1);
-      logger.info("Connected to MQTT broker {} and subscribed to {}", mqtt.brokerUri(), mqtt.stateTopic());
+      for (DeviceDefinition device : deviceCatalog.all()) {
+        client.subscribe(stateTopic(device.id()), 1);
+      }
+      logger.info("Connected to MQTT broker {} and subscribed to device state topics", mqtt.brokerUri());
     } catch (Exception exception) {
       logger.warn("MQTT is not connected yet: {}", exception.getMessage());
     }
   }
 
-  public boolean publishLedState(boolean enabled) {
+  public boolean publishDeviceState(String deviceId, boolean enabled) {
     if (!isConnected()) {
       connect();
     }
@@ -60,10 +70,10 @@ public class MqttCommandPublisher implements MqttCallback {
       MqttMessage message = new MqttMessage(payload);
       message.setQos(1);
       message.setRetained(true);
-      client.publish(properties.mqtt().commandTopic(), message);
+      client.publish(commandTopic(deviceId), message);
       return true;
     } catch (MqttException exception) {
-      logger.warn("Failed to publish LED command: {}", exception.getMessage());
+      logger.warn("Failed to publish {} command: {}", deviceId, exception.getMessage());
       return false;
     }
   }
@@ -83,12 +93,23 @@ public class MqttCommandPublisher implements MqttCallback {
   @Override
   public void messageArrived(String topic, MqttMessage message) {
     String payload = new String(message.getPayload(), StandardCharsets.UTF_8).trim();
-    boolean ledOn = payload.equalsIgnoreCase("ON") || payload.equals("1") || payload.equalsIgnoreCase("true");
+    String deviceId = deviceIdFromStateTopic(topic);
+    if (deviceId == null) {
+      logger.warn("Ignoring message from unknown topic {}", topic);
+      return;
+    }
+
+    Boolean reportedState = parseState(payload);
+    if (reportedState == null) {
+      logger.warn("Ignoring unknown state payload '{}' from topic {}", payload, topic);
+      return;
+    }
+
     try {
-      ledService.handleReportedLedState(ledOn);
-      logger.info("Received LED reported state {} from topic {}", payload, topic);
+      deviceService.handleReportedState(deviceId, reportedState);
+      logger.info("Received {} reported state {} from topic {}", deviceId, payload, topic);
     } catch (Exception exception) {
-      logger.warn("Received LED state {}, but could not save it to database yet", payload, exception);
+      logger.warn("Received {} state {}, but could not save it to database yet", deviceId, payload, exception);
     }
   }
 
@@ -98,6 +119,36 @@ public class MqttCommandPublisher implements MqttCallback {
 
   private boolean isConnected() {
     return client != null && client.isConnected();
+  }
+
+  private String commandTopic(String deviceId) {
+    return properties.mqtt().commandTopicPattern().formatted(deviceId);
+  }
+
+  private String stateTopic(String deviceId) {
+    return properties.mqtt().stateTopicPattern().formatted(deviceId);
+  }
+
+  private String deviceIdFromStateTopic(String topic) {
+    return deviceCatalog.all().stream()
+        .map(DeviceDefinition::id)
+        .filter(deviceId -> stateTopic(deviceId).equals(topic))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private Boolean parseState(String payload) {
+    String normalized = payload.trim().toUpperCase(Locale.ROOT);
+    if (normalized.equals("ON") || normalized.equals("1") || normalized.equals("TRUE") || normalized.equals("OPEN")) {
+      return true;
+    }
+
+    if (normalized.equals("OFF") || normalized.equals("0") || normalized.equals("FALSE") || normalized.equals("CLOSE")
+        || normalized.equals("CLOSED")) {
+      return false;
+    }
+
+    return null;
   }
 
   private MqttConnectOptions connectOptions(AiotProperties.Mqtt mqtt) {

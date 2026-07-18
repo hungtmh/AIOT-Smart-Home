@@ -1,6 +1,6 @@
 # AIOT Smart Home
 
-Du an demo AIoT Smart Home voi luong dieu khien den that/gia lap:
+Du an demo AIoT Smart Home voi luong dieu khien thiet bi that/gia lap:
 
 ```text
 React frontend
@@ -9,7 +9,7 @@ React frontend
     -> Supabase PostgreSQL
     -> HiveMQ MQTT broker
       -> ESP32/Wokwi subscribe command topic
-      -> ESP32/Wokwi bat/tat LED
+      -> ESP32/Wokwi dieu khien LED, servo, buzzer, pump
       -> ESP32/Wokwi publish state topic ve backend
 ```
 
@@ -18,7 +18,7 @@ React frontend
 ```text
 backend/   Spring Boot API, JWT security, Supabase PostgreSQL, MQTT bridge
 frontend/  React + Vite dashboard
-wokwi/     Wokwi ESP32 LED MQTT simulator
+wokwi/     Wokwi ESP32 MQTT simulator
 arduino/   Sketch cho board that
 ```
 
@@ -89,8 +89,8 @@ SUPABASE_JWKS_URI=https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.jso
 MQTT_BROKER_URI=ssl://<hivemq-host>:8883
 MQTT_USERNAME=<mqtt-username>
 MQTT_PASSWORD=<mqtt-password>
-MQTT_LED_COMMAND_TOPIC=aiot/esp32-s3/device/led/set
-MQTT_LED_STATE_TOPIC=aiot/esp32-s3/device/led/state
+MQTT_COMMAND_TOPIC_PATTERN=aiot/esp32-s3/device/%s/set
+MQTT_STATE_TOPIC_PATTERN=aiot/esp32-s3/device/%s/state
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
@@ -195,17 +195,17 @@ wokwi/esp32_led_mqtt/diagram.json
 wokwi/esp32_led_mqtt/libraries.txt
 ```
 
-Can dam bao trong `sketch.ino` MQTT username/password/topic trung voi `backend/.env`.
+Can dam bao trong `sketch.ino` MQTT username/password trung voi `backend/.env`.
 
 Khi Wokwi chay thanh cong, Serial Monitor se co dang:
 
 ```text
 [WiFi] Connected
 [MQTT] Connecting to HiveMQ Cloud... connected
-[MQTT] Subscribed: aiot/esp32-s3/device/led/set
+[MQTT] Subscribed to device command topics
 ```
 
-Sau do bam LED tren frontend. Wokwi se nhan message:
+Sau do bam LED/servo/buzzer/pump tren frontend. Wokwi se nhan message:
 
 ```text
 [MQTT] Message on aiot/esp32-s3/device/led/set: ON
@@ -213,19 +213,19 @@ Sau do bam LED tren frontend. Wokwi se nhan message:
 [MQTT] Published state: ON
 ```
 
-## 10. Luong bat/tat LED
+## 10. Luong dieu khien thiet bi
 
 ```text
 1. User login frontend bang Supabase Auth
 2. Frontend nhan access_token JWT
-3. User bam LED
-4. Frontend goi POST /api/devices/led/command kem Authorization: Bearer <JWT>
+3. User bam LED/servo/buzzer/pump
+4. Frontend goi POST /api/devices/{deviceId}/command kem Authorization: Bearer <JWT>
 5. Spring Security verify JWT bang Supabase JWKS/secret
-6. LedController goi LedService
-7. LedService luu desired_state vao Supabase PostgreSQL
-8. LedService goi MqttCommandPublisher publish ON/OFF len MQTT command topic
+6. DeviceController goi DeviceService
+7. DeviceService luu desired_state vao Supabase PostgreSQL
+8. DeviceService goi MqttCommandPublisher publish ON/OFF len MQTT command topic
 9. ESP32/Wokwi dang subscribe topic do nen nhan ON/OFF
-10. ESP32/Wokwi bat/tat LED
+10. ESP32/Wokwi dieu khien dung thiet bi
 11. ESP32/Wokwi publish reported state ve MQTT state topic
 12. Backend nhan state va cap nhat reported_state
 ```
@@ -236,8 +236,10 @@ Can JWT hop le:
 
 ```http
 GET /api/auth/me
+GET /api/devices
 GET /api/devices/led
-POST /api/devices/led/command
+GET /api/devices/pump
+POST /api/devices/{deviceId}/command
 Content-Type: application/json
 
 { "state": true }
@@ -302,26 +304,34 @@ SUPABASE_DB_URL=jdbc:postgresql://<pooler-host>:5432/postgres?sslmode=require
 SUPABASE_DB_USERNAME=postgres.<project-ref>
 ```
 
-### MQTT connected nhung LED khong doi
+### MQTT connected nhung thiet bi khong doi
 
 Kiem tra topic trong 3 noi phai trung nhau:
 
 ```text
-backend/.env
 wokwi/esp32_led_mqtt/sketch.ino
 HiveMQ test client neu co
 ```
 
-Command topic:
+Command topic pattern:
 
 ```text
-aiot/esp32-s3/device/led/set
+aiot/esp32-s3/device/{deviceId}/set
 ```
 
-State topic:
+State topic pattern:
 
 ```text
-aiot/esp32-s3/device/led/state
+aiot/esp32-s3/device/{deviceId}/state
+```
+
+Device ids hien co:
+
+```text
+led
+servo
+buzzer
+pump
 ```
 
 ## 13. Lenh build kiem tra

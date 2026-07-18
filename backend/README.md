@@ -1,6 +1,6 @@
 # AIOT Smart Home Backend
 
-Spring Boot backend cho luong dieu khien LED qua MQTT, luu trang thai vao Supabase PostgreSQL va bao ve API bang Supabase JWT.
+Spring Boot backend cho luong dieu khien LED, servo, buzzer va mini water pump qua MQTT, luu trang thai vao Supabase PostgreSQL va bao ve API bang Supabase JWT.
 
 Doc README goc cua repo truoc:
 
@@ -28,8 +28,8 @@ SUPABASE_JWKS_URI=https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.jso
 MQTT_BROKER_URI=ssl://<hivemq-host>:8883
 MQTT_USERNAME=<mqtt-username>
 MQTT_PASSWORD=<mqtt-password>
-MQTT_LED_COMMAND_TOPIC=aiot/esp32-s3/device/led/set
-MQTT_LED_STATE_TOPIC=aiot/esp32-s3/device/led/state
+MQTT_COMMAND_TOPIC_PATTERN=aiot/esp32-s3/device/%s/set
+MQTT_STATE_TOPIC_PATTERN=aiot/esp32-s3/device/%s/state
 
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
@@ -60,8 +60,10 @@ Tat ca `/api/**` can JWT hop le tu Supabase Auth.
 
 ```http
 GET /api/auth/me
+GET /api/devices
 GET /api/devices/led
-POST /api/devices/led/command
+GET /api/devices/pump
+POST /api/devices/{deviceId}/command
 Content-Type: application/json
 
 { "state": true }
