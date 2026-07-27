@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESP32 MQTT Simulator – AIOT Smart Home</title>
+  <meta name="description" content="Mô phỏng firmware ESP32 gửi/nhận MQTT qua web, thay thế phần cứng thật để test hệ thống." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- MQTT.js over CDN -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+
+  <style>
+    /* ============================== DESIGN SYSTEM ============================== */
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-card: #111827;
+      --bg-card-hover: #1a2236;
+      --bg-input: #0d1322;
+      --border: #1e293b;
+      --border-accent: #334155;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --blue: #3b82f6;
+      --blue-glow: rgba(59, 130, 246, 0.25);
+      --green: #22c55e;
+      --green-glow: rgba(34, 197, 94, 0.2);
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.2);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.15);
+      --cyan: #06b6d4;
+      --purple: #a855f7;
+
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================== LAYOUT ============================== */
+    .app-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10, 14, 26, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex; align-items: center; gap: 16px;
+    }
+
+    .app-header .logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 14px; color: #fff;
+    }
+
+    .app-header h1 {
+      font-size: 18px; font-weight: 700;
+      background: linear-gradient(90deg, var(--text-primary), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .app-header .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .connection-badge {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px; font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .connection-badge.connected { background: var(--green-glow); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .connection-badge.disconnected { background: var(--red-glow); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+    .connection-badge.connecting { background: var(--amber-glow); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); animation: pulse 1.5s ease infinite; }
+
+    .connection-badge .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+    }
+
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      padding: 24px 32px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid { grid-template-columns: 1fr; padding: 16px; }
+    }
+
+    /* ============================== CARDS ============================== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+
+    .card:hover { border-color: var(--border-accent); }
+
+    .card-title {
+      font-size: 13px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .card-title .icon {
+      width: 18px; height: 18px; opacity: 0.6;
+    }
+
+    /* ============================== CONNECTION FORM ============================== */
+    .form-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-row.full { grid-template-columns: 1fr; }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+
+    .form-group label {
+      font-size: 11px; font-weight: 600;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px;
+    }
+
+    .form-group input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 8px 12px;
+      font-size: 13px; font-family: var(--font-mono);
+      color: var(--text-primary);
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .form-group input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+
+    .btn-group { display: flex; gap: 8px; margin-top: 8px; }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none; border-radius: var(--radius-xs);
+      font-size: 13px; font-weight: 600; font-family: var(--font-sans);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    .btn-connect {
+      background: linear-gradient(135deg, var(--blue), #2563eb);
+      color: #fff;
+    }
+
+    .btn-connect:hover { filter: brightness(1.15); transform: translateY(-1px); }
+    .btn-connect:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+
+    .btn-disconnect {
+      background: linear-gradient(135deg, var(--red), #dc2626);
+      color: #fff;
+    }
+
+    .btn-disconnect:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+    /* ============================== DEVICE STATES ============================== */
+    .device-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .device-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      transition: var(--transition);
+    }
+
+    .device-row.on { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
+
+    .device-emoji { font-size: 20px; width: 32px; text-align: center; }
+
+    .device-info { flex: 1; }
+    .device-info .name { font-size: 13px; font-weight: 600; }
+    .device-info .topic { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+
+    .device-state {
+      font-size: 12px; font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .device-state.on { background: var(--green-glow); color: var(--green); }
+    .device-state.off { background: rgba(100,116,139,0.15); color: var(--text-muted); }
+
+    /* ============================== SENSOR CONTROLS ============================== */
+    .sensor-row {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .sensor-row label {
+      font-size: 12px; font-weight: 600; color: var(--text-secondary);
+      width: 100px; flex-shrink: 0;
+    }
+
+    .sensor-row input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .sensor-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--blue);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--blue-glow);
+      transition: var(--transition);
+    }
+
+    .sensor-row input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 14px var(--blue-glow);
+    }
+
+    .sensor-value {
+      font-family: var(--font-mono);
+      font-size: 14px; font-weight: 600;
+      min-width: 70px; text-align: right;
+      color: var(--cyan);
+    }
+
+    /* ============================== TELEMETRY CONTROL ============================== */
+    .telemetry-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .telemetry-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600;
+    }
+
+    .telemetry-status.active { color: var(--green); }
+    .telemetry-status.inactive { color: var(--text-muted); }
+
+    .telemetry-status .blink {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: currentColor;
+    }
+
+    .telemetry-status.active .blink { animation: pulse 1s ease infinite; }
+
+    /* ============================== THRESHOLD ============================== */
+    .threshold-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .threshold-row label {
+      font-size: 12px; font-weight: 600; color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .threshold-value {
+      font-family: var(--font-mono);
+      font-size: 16px; font-weight: 700;
+      color: var(--amber);
+    }
+
+    /* ============================== LOG CONSOLE ============================== */
+    .log-console {
+      background: #050810;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      height: 420px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+      scroll-behavior: smooth;
+    }
+
+    .log-console::-webkit-scrollbar { width: 6px; }
+    .log-console::-webkit-scrollbar-track { background: transparent; }
+    .log-console::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
+
+    .log-line { white-space: pre-wrap; word-break: break-all; }
+    .log-line .timestamp { color: var(--text-muted); }
+    .log-line.info { color: var(--text-secondary); }
+    .log-line.pub { color: var(--cyan); }
+    .log-line.sub { color: var(--green); }
+    .log-line.alert { color: var(--red); }
+    .log-line.warn { color: var(--amber); }
+    .log-line.system { color: var(--purple); }
+
+    .log-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .btn-clear {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 4px 12px;
+      font-size: 11px; font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-clear:hover { border-color: var(--text-muted); color: var(--text-secondary); }
+
+    .log-counter {
+      font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);
+    }
+
+    /* ============================== AUTO-RESET TIMERS ============================== */
+    .timer-bar {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 8px; padding: 8px 12px;
+      background: var(--bg-input);
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--border);
+    }
+
+    .timer-bar .label {
+      font-size: 11px; color: var(--text-muted); font-weight: 600;
+      width: 60px;
+    }
+
+    .timer-track {
+      flex: 1; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .timer-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--amber), var(--red));
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+
+    .timer-countdown {
+      font-size: 11px; font-family: var(--font-mono);
+      color: var(--amber); font-weight: 600;
+      min-width: 40px; text-align: right;
+    }
+
+    /* ============================== ALERT BANNER ============================== */
+    .alert-banner {
+      display: none;
+      align-items: center; gap: 10px;
+      padding: 12px 16px;
+      background: linear-gradient(90deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius-sm);
+      margin-bottom: 12px;
+      animation: slideIn 0.3s ease;
+    }
+
+    .alert-banner.show { display: flex; }
+
+    .alert-banner .icon { font-size: 20px; }
+    .alert-banner .text { font-size: 12px; font-weight: 600; color: var(--red); flex: 1; }
+    .alert-banner .detail { font-size: 11px; color: var(--text-muted); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================== STATS BAR ============================== */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 12px 8px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .stat-item .value {
+      font-size: 20px; font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .stat-item .label {
+      font-size: 10px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.3px;
+      margin-top: 2px;
+    }
+
+    .stat-item.blue .value { color: var(--blue); }
+    .stat-item.green .value { color: var(--green); }
+    .stat-item.amber .value { color: var(--amber); }
+    .stat-item.cyan .value { color: var(--cyan); }
+
+    /* ============================== RIGHT PANEL ============================== */
+    .right-panel { display: flex; flex-direction: column; gap: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- ======================== HEADER ======================== -->
+  <header class="app-header">
+    <div class="logo">⚡</div>
+    <div>
+      <h1>ESP32 MQTT Simulator</h1>
+      <p class="subtitle">Giả lập firmware Embedded.ino — gửi/nhận MQTT như phần cứng thật</p>
+    </div>
+    <div id="connBadge" class="connection-badge disconnected">
+      <span class="dot"></span>
+      <span id="connLabel">Disconnected</span>
+    </div>
+  </header>
+
+  <!-- ======================== MAIN ======================== -->
+  <div class="main-grid">
+
+    <!-- ======== LEFT SIDEBAR ======== -->
+    <div>
+      <!-- Connection Settings -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">🔌 MQTT Broker Connection</div>
+        <div class="form-row full">
+          <div class="form-group">
+            <label>Broker Host</label>
+            <input id="mqttHost" value="b66733af03914cf1a45702ed5b2f999d.s1.eu.hivemq.cloud" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>WSS Port</label>
+            <input id="mqttPort" value="8884" type="number" />
+          </div>
+          <div class="form-group">
+            <label>Client ID</label>
+            <input id="mqttClientId" value="esp32-simulator-web" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Username</label>
+            <input id="mqttUser" value="aiot_esp32" />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input id="mqttPass" value="Aiot@123456" type="password" />
+          </div>
+        </div>
+        <div class="btn-group">
+          <button id="btnConnect" class="btn btn-connect" onclick="connectMqtt()">
+            ▶ Connect
+          </button>
+          <button id="btnDisconnect" class="btn btn-disconnect" onclick="disconnectMqtt()" style="display:none;">
+            ⏹ Disconnect
+          </button>
+        </div>
+      </div>
+
+      <!-- Device States -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">📟 Device States (ESP32 Side)</div>
+        <div class="device-list" id="deviceList">
+          <!-- Rendered by JS -->
+        </div>
+        <div id="timerContainer"></div>
+      </div>
+
+      <!-- MQ-2 Threshold -->
+      <div class="card">
+        <div class="card-title">⚙️ MQ-2 Threshold (Remote Configurable)</div>
+        <div class="threshold-row">
+          <label>Current Smoke Threshold</label>
+          <span class="threshold-value" id="thresholdValue">70 ppm</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== RIGHT PANEL ======== -->
+    <div class="right-panel">
+
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat-item blue">
+          <div class="value" id="statPublished">0</div>
+          <div class="label">Published</div>
+        </div>
+        <div class="stat-item green">
+          <div class="value" id="statReceived">0</div>
+          <div class="label">Received</div>
+        </div>
+        <div class="stat-item amber">
+          <div class="value" id="statAlerts">0</div>
+          <div class="label">Alerts</div>
+        </div>
+        <div class="stat-item cyan">
+          <div class="value" id="statTelemetry">0</div>
+          <div class="label">Telemetry</div>
+        </div>
+      </div>
+
+      <!-- Alert Banner -->
+      <div id="alertBanner" class="alert-banner">
+        <span class="icon">🔥</span>
+        <span class="text" id="alertText">SMOKE_HIGH ALERT!</span>
+        <span class="detail" id="alertDetail"></span>
+      </div>
+
+      <!-- Sensor Sliders -->
+      <div class="card">
+        <div class="telemetry-header">
+          <div class="card-title" style="margin-bottom:0;">🌡️ Simulated Sensors (DHT11 + MQ-2)</div>
+          <div class="telemetry-status inactive" id="telemetryStatus">
+            <span class="blink"></span>
+            <span id="telemetryLabel">Telemetry OFF</span>
+          </div>
+        </div>
+
+        <div class="sensor-row">
+          <label>🌡 Temperature</label>
+          <input type="range" id="sliderTemp" min="10" max="50" step="0.1" value="28.0" oninput="updateSensorDisplay()" />
+          <span class="sensor-value" id="valTemp">28.0 °C</span>
+        </div>
+        <div class="sensor-row">
+          <label>💧 Humidity</label>
+          <input type="range" id="sliderHum" min="20" max="95" step="0.1" value="65.0" oninput="updateSensorDisplay()" />
+          <span class="sensor-value" id="valHum">65.0 %</span>
+        </div>
+        <div class="sensor-row">
+          <label>💨 Smoke PPM</label>
+          <input type="range" id="sliderSmoke" min="0" max="100" step="1" value="15" oninput="updateSensorDisplay()" />
+          <span class="sensor-value" id="valSmoke">15 ppm</span>
+        </div>
+
+        <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+          💡 Telemetry sẽ tự bật khi bất kỳ thiết bị nào được ON (giống firmware thật).
+          Di chuyển slider smoke vượt ngưỡng để trigger cảnh báo.
+        </p>
+      </div>
+
+      <!-- Log Console -->
+      <div class="card">
+        <div class="log-toolbar">
+          <div class="card-title" style="margin-bottom:0;">📋 Serial Monitor (Simulated)</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="log-counter" id="logCounter">0 lines</span>
+            <button class="btn-clear" onclick="clearLogs()">Clear</button>
+          </div>
+        </div>
+        <div class="log-console" id="logConsole"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    //  MQTT TOPICS  (Must match Embedded.ino & backend application.yml)
+    // =========================================================================
+    const TOPICS = {
+      // Subscribe (receive commands from web/backend)
+      LED_CMD:       'aiot/esp32-s3/device/led/set',
+      SERVO_CMD:     'aiot/esp32-s3/device/servo/set',
+      BUZZER_CMD:    'aiot/esp32-s3/device/buzzer/set',
+      PUMP_CMD:      'aiot/esp32-s3/device/pump/set',
+      MQ2_THRESHOLD: 'aiot/esp32-s3/device/mq2/threshold/set',
+
+      // Publish (send state feedback to web/backend)
+      LED_STATE:     'aiot/esp32-s3/device/led/state',
+      SERVO_STATE:   'aiot/esp32-s3/device/servo/state',
+      BUZZER_STATE:  'aiot/esp32-s3/device/buzzer/state',
+      PUMP_STATE:    'aiot/esp32-s3/device/pump/state',
+      MQ2_THRESHOLD_STATE: 'aiot/esp32-s3/device/mq2/threshold/state',
+
+      // Publish telemetry & alerts
+      TELEMETRY:     'aiot/esp32-s3/telemetry',
+      MQ2_ALERT:     'aiot/esp32-s3/alert/smoke',
+    };
+
+    // =========================================================================
+    //  STATE (mirrors Embedded.ino global variables)
+    // =========================================================================
+    let mqttClient = null;
+
+    const deviceState = {
+      led:    false,
+      servo:  false,
+      buzzer: false,
+      pump:   false,
+    };
+
+    let telemetryEnabled = false;
+    let telemetryIntervalId = null;
+    const TELEMETRY_INTERVAL_MS = 2000;
+
+    // MQ-2 Alert
+    let mq2Threshold = 70;
+    let lastAlertMs = 0;
+    const ALERT_COOLDOWN_MS = 10000;
+
+    // Auto-reset timers
+    let servoOnTimestamp = 0;
+    let pumpOnTimestamp  = 0;
+    const SERVO_AUTO_CLOSE_MS = 30000;
+    const PUMP_AUTO_OFF_MS    = 60000;
+    let autoResetIntervalId = null;
+
+    // Moving Average Filter
+    const FILTER_SIZE = 5;
+    const tempBuffer = new Array(FILTER_SIZE).fill(0);
+    const humBuffer  = new Array(FILTER_SIZE).fill(0);
+    const smokeBuffer = new Array(FILTER_SIZE).fill(0);
+    let filterIndex = 0;
+    let filterFilled = false;
+
+    // Stats counters
+    let statPublished = 0;
+    let statReceived  = 0;
+    let statAlerts    = 0;
+    let statTelemetry = 0;
+    let logLineCount  = 0;
+
+    // =========================================================================
+    //  DEVICE DEFINITIONS (for UI rendering)
+    // =========================================================================
+    const DEVICES = [
+      { id: 'led',    name: 'LED Light',        emoji: '💡', cmdTopic: TOPICS.LED_CMD,    stateTopic: TOPICS.LED_STATE,    onStr: 'ON',   offStr: 'OFF'   },
+      { id: 'servo',  name: 'Servo Motor (Door)',emoji: '🚪', cmdTopic: TOPICS.SERVO_CMD,  stateTopic: TOPICS.SERVO_STATE,  onStr: 'OPEN', offStr: 'CLOSE' },
+      { id: 'buzzer', name: 'Buzzer Alarm',      emoji: '🔔', cmdTopic: TOPICS.BUZZER_CMD, stateTopic: TOPICS.BUZZER_STATE, onStr: 'ON',   offStr: 'OFF'   },
+      { id: 'pump',   name: 'Pump (Window Servo)', emoji: '🪟', cmdTopic: TOPICS.PUMP_CMD,  stateTopic: TOPICS.PUMP_STATE,  onStr: 'ON',   offStr: 'OFF'   },
+    ];
+
+    // =========================================================================
+    //  LOGGING (simulates Serial.printf)
+    // =========================================================================
+    function log(type, message) {
+      const console = document.getElementById('logConsole');
+      const now = new Date();
+      const ts = now.toLocaleTimeString('vi-VN', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+
+      const line = document.createElement('div');
+      line.className = `log-line ${type}`;
+      line.innerHTML = `<span class="timestamp">[${ts}]</span> ${escapeHtml(message)}`;
+      console.appendChild(line);
+
+      // Auto-scroll
+      console.scrollTop = console.scrollHeight;
+
+      // Limit lines
+      logLineCount++;
+      if (logLineCount > 500) {
+        console.removeChild(console.firstChild);
+        logLineCount--;
+      }
+
+      document.getElementById('logCounter').textContent = `${logLineCount} lines`;
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function clearLogs() {
+      document.getElementById('logConsole').innerHTML = '';
+      logLineCount = 0;
+      document.getElementById('logCounter').textContent = '0 lines';
+    }
+
+    // =========================================================================
+    //  MQTT CONNECTION
+    // =========================================================================
+    function connectMqtt() {
+      const host     = document.getElementById('mqttHost').value.trim();
+      const port     = parseInt(document.getElementById('mqttPort').value);
+      const clientId = document.getElementById('mqttClientId').value.trim();
+      const username = document.getElementById('mqttUser').value.trim();
+      const password = document.getElementById('mqttPass').value.trim();
+
+      const brokerUrl = `wss://${host}:${port}/mqtt`;
+
+      updateConnectionUI('connecting');
+      log('system', `[MQTT] Connecting to ${brokerUrl}...`);
+
+      mqttClient = mqtt.connect(brokerUrl, {
+        clientId: clientId + '-' + Math.random().toString(16).substring(2, 8),
+        username: username,
+        password: password,
+        protocol: 'wss',
+        reconnectPeriod: 3000,
+        connectTimeout: 10000,
+      });
+
+      mqttClient.on('connect', () => {
+        updateConnectionUI('connected');
+        log('system', '[MQTT] Connected to HiveMQ Cloud!');
+
+        // Subscribe to command topics (like ESP32 does)
+        const subTopics = [
+          TOPICS.LED_CMD, TOPICS.SERVO_CMD,
+          TOPICS.BUZZER_CMD, TOPICS.PUMP_CMD,
+          TOPICS.MQ2_THRESHOLD,
+        ];
+
+        subTopics.forEach(topic => {
+          mqttClient.subscribe(topic, { qos: 1 }, (err) => {
+            if (!err) {
+              log('sub', `[SUB] Subscribed: ${topic}`);
+            } else {
+              log('warn', `[SUB] Failed to subscribe: ${topic}`);
+            }
+          });
+        });
+
+        log('system', '[MQTT] Subscribed to all command topics.');
+
+        // Publish initial states (like publishAllStates in firmware)
+        publishAllStates();
+
+        // Start auto-reset checker
+        startAutoResetChecker();
+      });
+
+      mqttClient.on('message', (topic, payload) => {
+        const message = payload.toString().trim();
+        statReceived++;
+        updateStats();
+        onMqttMessage(topic, message);
+      });
+
+      mqttClient.on('error', (err) => {
+        log('alert', `[MQTT] Error: ${err.message}`);
+        updateConnectionUI('disconnected');
+      });
+
+      mqttClient.on('close', () => {
+        log('warn', '[MQTT] Connection closed.');
+        updateConnectionUI('disconnected');
+        stopTelemetry();
+        stopAutoResetChecker();
+      });
+
+      mqttClient.on('reconnect', () => {
+        log('warn', '[MQTT] Reconnecting...');
+        updateConnectionUI('connecting');
+      });
+    }
+
+    function disconnectMqtt() {
+      if (mqttClient) {
+        mqttClient.end(true);
+        mqttClient = null;
+      }
+      stopTelemetry();
+      stopAutoResetChecker();
+      updateConnectionUI('disconnected');
+      log('system', '[MQTT] Disconnected by user.');
+    }
+
+    function updateConnectionUI(state) {
+      const badge = document.getElementById('connBadge');
+      const label = document.getElementById('connLabel');
+      const btnConn = document.getElementById('btnConnect');
+      const btnDisc = document.getElementById('btnDisconnect');
+
+      badge.className = 'connection-badge ' + state;
+
+      if (state === 'connected') {
+        label.textContent = 'Connected';
+        btnConn.style.display = 'none';
+        btnDisc.style.display = 'flex';
+      } else if (state === 'connecting') {
+        label.textContent = 'Connecting...';
+        btnConn.disabled = true;
+        btnConn.style.display = 'flex';
+        btnDisc.style.display = 'none';
+      } else {
+        label.textContent = 'Disconnected';
+        btnConn.disabled = false;
+        btnConn.style.display = 'flex';
+        btnDisc.style.display = 'none';
+      }
+    }
+
+    // =========================================================================
+    //  PUBLISH HELPERS
+    // =========================================================================
+    function mqttPublish(topic, payload, retained = true) {
+      if (!mqttClient || !mqttClient.connected) return;
+      mqttClient.publish(topic, payload, { qos: 1, retain: retained });
+      log('pub', `[PUB] ${topic} = ${payload}`);
+      statPublished++;
+      updateStats();
+    }
+
+    function publishState(topic, state, onStr = 'ON', offStr = 'OFF') {
+      mqttPublish(topic, state ? onStr : offStr);
+    }
+
+    function publishAllStates() {
+      publishState(TOPICS.LED_STATE,    deviceState.led);
+      publishState(TOPICS.SERVO_STATE,  deviceState.servo, 'OPEN', 'CLOSE');
+      publishState(TOPICS.BUZZER_STATE, deviceState.buzzer);
+      publishState(TOPICS.PUMP_STATE,   deviceState.pump);
+      mqttPublish(TOPICS.MQ2_THRESHOLD_STATE, String(mq2Threshold));
+      log('system', '[MQTT] Published all initial states.');
+    }
+
+    // =========================================================================
+    //  DEVICE CONTROL (mirrors setLed, setServo, setBuzzer, setPump)
+    // =========================================================================
+    function setDevice(deviceId, enabled) {
+      deviceState[deviceId] = enabled;
+
+      const dev = DEVICES.find(d => d.id === deviceId);
+      if (!dev) return;
+
+      log('info', `[${deviceId.toUpperCase()}] ${enabled ? dev.onStr : dev.offStr}`);
+      publishState(dev.stateTopic, enabled, dev.onStr, dev.offStr);
+
+      // Track timestamps for auto-reset
+      const now = Date.now();
+      if (deviceId === 'servo') {
+        servoOnTimestamp = enabled ? now : 0;
+      } else if (deviceId === 'pump') {
+        pumpOnTimestamp = enabled ? now : 0;
+      }
+
+      // Update telemetry enable
+      telemetryEnabled = deviceState.led || deviceState.servo || deviceState.buzzer || deviceState.pump;
+      log('info', `[TELE] Telemetry ${telemetryEnabled ? 'ENABLED' : 'DISABLED'}`);
+
+      if (telemetryEnabled) {
+        startTelemetry();
+      } else {
+        stopTelemetry();
+      }
+
+      renderDeviceUI();
+    }
+
+    // =========================================================================
+    //  MQTT CALLBACK – Message from Web/Backend (mirrors onMqttMessage)
+    // =========================================================================
+    function onMqttMessage(topic, message) {
+      log('sub', `[MQTT-IN] ${topic} → "${message}"`);
+
+      // MQ-2 Threshold command
+      if (topic === TOPICS.MQ2_THRESHOLD) {
+        const newThreshold = parseInt(message);
+        if (newThreshold > 0 && newThreshold <= 100) {
+          mq2Threshold = newThreshold;
+          log('info', `[MQ2] Threshold updated: ${mq2Threshold} ppm`);
+          document.getElementById('thresholdValue').textContent = `${mq2Threshold} ppm`;
+          mqttPublish(TOPICS.MQ2_THRESHOLD_STATE, String(mq2Threshold));
+        } else {
+          log('warn', '[MQ2] Invalid threshold value, ignored.');
+        }
+        return;
+      }
+
+      // Device command
+      const nextState = parseOnOff(message);
+      if (nextState === null) {
+        log('warn', `[MQTT-IN] Unknown command payload: "${message}"`);
+        return;
+      }
+
+      if (topic === TOPICS.LED_CMD)    setDevice('led', nextState);
+      else if (topic === TOPICS.SERVO_CMD)  setDevice('servo', nextState);
+      else if (topic === TOPICS.BUZZER_CMD) setDevice('buzzer', nextState);
+      else if (topic === TOPICS.PUMP_CMD)   setDevice('pump', nextState);
+    }
+
+    function parseOnOff(msg) {
+      const upper = msg.trim().toUpperCase();
+      if (['ON', '1', 'TRUE', 'OPEN'].includes(upper)) return true;
+      if (['OFF', '0', 'FALSE', 'CLOSE', 'CLOSED'].includes(upper)) return false;
+      return null;
+    }
+
+    // =========================================================================
+    //  LUỒNG 1: TELEMETRY (Moving Average Filter + Periodic Publish)
+    // =========================================================================
+    function startTelemetry() {
+      if (telemetryIntervalId) return;
+
+      updateTelemetryUI(true);
+
+      telemetryIntervalId = setInterval(() => {
+        if (!telemetryEnabled || !mqttClient || !mqttClient.connected) return;
+
+        // Read slider values (simulating sensor reads)
+        const rawTemp  = parseFloat(document.getElementById('sliderTemp').value);
+        const rawHum   = parseFloat(document.getElementById('sliderHum').value);
+        const rawSmoke = parseInt(document.getElementById('sliderSmoke').value);
+
+        // Moving average filter
+        tempBuffer[filterIndex]  = rawTemp;
+        humBuffer[filterIndex]   = rawHum;
+        smokeBuffer[filterIndex] = rawSmoke;
+        filterIndex = (filterIndex + 1) % FILTER_SIZE;
+        if (filterIndex === 0) filterFilled = true;
+
+        const sampleCount = filterFilled ? FILTER_SIZE : Math.max(filterIndex, 1);
+
+        let filteredTemp  = tempBuffer.slice(0, sampleCount).reduce((a, b) => a + b, 0) / sampleCount;
+        let filteredHum   = humBuffer.slice(0, sampleCount).reduce((a, b) => a + b, 0) / sampleCount;
+        let filteredSmoke = Math.round(smokeBuffer.slice(0, sampleCount).reduce((a, b) => a + b, 0) / sampleCount);
+
+        // Round
+        filteredTemp = Math.round(filteredTemp * 10) / 10;
+        filteredHum  = Math.round(filteredHum * 10) / 10;
+
+        // Publish telemetry JSON
+        const payload = JSON.stringify({
+          temperature: filteredTemp,
+          humidity: filteredHum,
+          smokePpm: filteredSmoke,
+        });
+
+        mqttPublish(TOPICS.TELEMETRY, payload);
+        statTelemetry++;
+        updateStats();
+
+        log('info', `[TELE] Temp=${filteredTemp}°C  Hum=${filteredHum}%  Smoke=${filteredSmoke} ppm`);
+
+        // Check smoke alert
+        checkSmokeAlert(filteredSmoke);
+      }, TELEMETRY_INTERVAL_MS);
+    }
+
+    function stopTelemetry() {
+      if (telemetryIntervalId) {
+        clearInterval(telemetryIntervalId);
+        telemetryIntervalId = null;
+      }
+      updateTelemetryUI(false);
+    }
+
+    function updateTelemetryUI(active) {
+      const el = document.getElementById('telemetryStatus');
+      const label = document.getElementById('telemetryLabel');
+      el.className = 'telemetry-status ' + (active ? 'active' : 'inactive');
+      label.textContent = active ? 'Telemetry ON (2s)' : 'Telemetry OFF';
+    }
+
+    // =========================================================================
+    //  LUỒNG 2: SMOKE ALERT (Dynamic Threshold + Cooldown)
+    // =========================================================================
+    function checkSmokeAlert(smokePpm) {
+      if (smokePpm >= mq2Threshold) {
+        const now = Date.now();
+        if (now - lastAlertMs >= ALERT_COOLDOWN_MS) {
+          lastAlertMs = now;
+
+          const alertPayload = JSON.stringify({
+            alert: 'SMOKE_HIGH',
+            smokePpm: smokePpm,
+            threshold: mq2Threshold,
+          });
+
+          mqttPublish(TOPICS.MQ2_ALERT, alertPayload, false);
+          statAlerts++;
+          updateStats();
+
+          log('alert', `[ALERT] Smoke=${smokePpm} ppm >= threshold=${mq2Threshold} → CANH BAO!`);
+
+          // Show alert banner
+          showAlertBanner(smokePpm);
+        }
+      } else {
+        hideAlertBanner();
+      }
+    }
+
+    function showAlertBanner(smokePpm) {
+      const banner = document.getElementById('alertBanner');
+      document.getElementById('alertText').textContent = `🚨 SMOKE_HIGH ALERT! ${smokePpm} ppm detected`;
+      document.getElementById('alertDetail').textContent = `Threshold: ${mq2Threshold} ppm — Cooldown: ${ALERT_COOLDOWN_MS / 1000}s`;
+      banner.classList.add('show');
+    }
+
+    function hideAlertBanner() {
+      document.getElementById('alertBanner').classList.remove('show');
+    }
+
+    // =========================================================================
+    //  LUỒNG 3: AUTO-RESET (Servo auto-close, Pump auto-off)
+    // =========================================================================
+    function startAutoResetChecker() {
+      if (autoResetIntervalId) return;
+      autoResetIntervalId = setInterval(handleAutoReset, 1000);
+    }
+
+    function stopAutoResetChecker() {
+      if (autoResetIntervalId) {
+        clearInterval(autoResetIntervalId);
+        autoResetIntervalId = null;
+      }
+    }
+
+    function handleAutoReset() {
+      const now = Date.now();
+
+      if (deviceState.servo && servoOnTimestamp > 0) {
+        if (now - servoOnTimestamp >= SERVO_AUTO_CLOSE_MS) {
+          log('warn', '[AUTO] Servo auto-close after timeout.');
+          setDevice('servo', false);
+        }
+      }
+
+      if (deviceState.pump && pumpOnTimestamp > 0) {
+        if (now - pumpOnTimestamp >= PUMP_AUTO_OFF_MS) {
+          log('warn', '[AUTO] Pump auto-off after timeout.');
+          setDevice('pump', false);
+        }
+      }
+
+      renderTimers();
+    }
+
+    // =========================================================================
+    //  UI RENDERING
+    // =========================================================================
+    function renderDeviceUI() {
+      const container = document.getElementById('deviceList');
+      container.innerHTML = DEVICES.map(dev => {
+        const isOn = deviceState[dev.id];
+        const stateStr = isOn ? dev.onStr : dev.offStr;
+        return `
+          <div class="device-row ${isOn ? 'on' : ''}">
+            <span class="device-emoji">${dev.emoji}</span>
+            <div class="device-info">
+              <div class="name">${dev.name}</div>
+              <div class="topic">${dev.stateTopic}</div>
+            </div>
+            <span class="device-state ${isOn ? 'on' : 'off'}">${stateStr}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTimers() {
+      const container = document.getElementById('timerContainer');
+      let html = '';
+      const now = Date.now();
+
+      if (deviceState.servo && servoOnTimestamp > 0) {
+        const elapsed = now - servoOnTimestamp;
+        const remaining = Math.max(0, SERVO_AUTO_CLOSE_MS - elapsed);
+        const pct = ((elapsed / SERVO_AUTO_CLOSE_MS) * 100).toFixed(1);
+        html += `
+          <div class="timer-bar">
+            <span class="label">Servo</span>
+            <div class="timer-track"><div class="timer-fill" style="width:${Math.min(pct, 100)}%"></div></div>
+            <span class="timer-countdown">${Math.ceil(remaining / 1000)}s</span>
+          </div>`;
+      }
+
+      if (deviceState.pump && pumpOnTimestamp > 0) {
+        const elapsed = now - pumpOnTimestamp;
+        const remaining = Math.max(0, PUMP_AUTO_OFF_MS - elapsed);
+        const pct = ((elapsed / PUMP_AUTO_OFF_MS) * 100).toFixed(1);
+        html += `
+          <div class="timer-bar">
+            <span class="label">Pump</span>
+            <div class="timer-track"><div class="timer-fill" style="width:${Math.min(pct, 100)}%"></div></div>
+            <span class="timer-countdown">${Math.ceil(remaining / 1000)}s</span>
+          </div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function updateSensorDisplay() {
+      const temp  = parseFloat(document.getElementById('sliderTemp').value);
+      const hum   = parseFloat(document.getElementById('sliderHum').value);
+      const smoke = parseInt(document.getElementById('sliderSmoke').value);
+
+      document.getElementById('valTemp').textContent  = `${temp.toFixed(1)} °C`;
+      document.getElementById('valHum').textContent   = `${hum.toFixed(1)} %`;
+      document.getElementById('valSmoke').textContent  = `${smoke} ppm`;
+
+      // Highlight smoke if above threshold
+      const smokeEl = document.getElementById('valSmoke');
+      smokeEl.style.color = smoke >= mq2Threshold ? 'var(--red)' : 'var(--cyan)';
+    }
+
+    function updateStats() {
+      document.getElementById('statPublished').textContent = statPublished;
+      document.getElementById('statReceived').textContent  = statReceived;
+      document.getElementById('statAlerts').textContent    = statAlerts;
+      document.getElementById('statTelemetry').textContent = statTelemetry;
+    }
+
+    // =========================================================================
+    //  INIT
+    // =========================================================================
+    renderDeviceUI();
+    updateSensorDisplay();
+    log('system', '=== AIOT Smart Home - ESP32 Web Simulator ===');
+    log('system', '[READY] Click "Connect" to start MQTT simulation.');
+    log('info', '[INFO] This simulator replicates all 3 data flows from Embedded.ino:');
+    log('info', '  1. Telemetry — DHT11 + MQ-2 sensor data (2s interval)');
+    log('info', '  2. Alert    — Smoke threshold alarm with cooldown');
+    log('info', '  3. Feedback — Device state publish on command');
+  </script>
+</body>
+</html>

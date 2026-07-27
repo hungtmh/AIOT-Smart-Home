@@ -1,68 +1,59 @@
-# Embedded Firmware - Ghi chú cấu hình
+# Embedded Firmware - Ghi chú cấu hình & Khai báo phần cứng
 
-## Sự khác nhau giữa cấu hình chân (Pin) trong các file nguồn
+## Bảng cấu hình chân (Pin Map) & Ánh xạ MQTT
 
-Dưới đây là bảng so sánh cấu hình chân giữa **3 nguồn**: Web/Wokwi (diagram.json + sketch.ino), file Testing (test.ino), và file chính (Embedded.ino).
+| Thiết bị phần cứng | Chân ESP32 | Topic MQTT Nhận Lệnh (Sub) | Topic MQTT Phản Hồi (Pub) | Ghi chú |
+|-------------------|------------|---------------------------|---------------------------|---------|
+| **LED Light** | GPIO 2 | `aiot/esp32-s3/device/led/set` | `aiot/esp32-s3/device/led/state` | Đèn/Relay |
+| **DHT11 Sensor** | GPIO 15 | — | `aiot/esp32-s3/telemetry` | Đọc Nhiệt độ & Độ ẩm (mỗi 2s) |
+| **Servo SG90 #1** | GPIO 18 | `aiot/esp32-s3/device/servo/set` | `aiot/esp32-s3/device/servo/state` | Điều khiển cửa chính |
+| **Servo SG90 #2** | GPIO 19 | `aiot/esp32-s3/device/pump/set` | `aiot/esp32-s3/device/pump/state` | **Mock qua topic Pump của Web** (điều khiển cửa sổ/van thứ 2) |
+| **Buzzer** | GPIO 21 | `aiot/esp32-s3/device/buzzer/set` | `aiot/esp32-s3/device/buzzer/state` | Còi báo động |
+| **MQ-2 Analog (AO)**| GPIO 34 | — | `aiot/esp32-s3/telemetry` | Đo PPM khói/gas |
+| **MQ-2 Digital (DO)**| GPIO 25 | — | `aiot/esp32-s3/alert/smoke` | Cảnh báo khói khẩn cấp |
 
-### Bảng so sánh chân GPIO
+---
 
-| Chức năng        | Wokwi (diagram.json) | Wokwi (sketch.ino) | test.ino         | **Embedded.ino** | Ghi chú                             |
-|------------------|-----------------------|---------------------|------------------|------------------|--------------------------------------|
-| LED              | GPIO 2                | GPIO 2              | GPIO 2           | **GPIO 2**       | ✅ Đồng nhất                        |
-| DHT Sensor       | GPIO 15 (DHT22)       | GPIO 15 (DHT22)     | GPIO 15 (DHT11)  | **GPIO 15 (DHT11)** | ⚠️ Wokwi dùng DHT22, test + Embedded dùng DHT11 |
-| Servo (Cửa)      | GPIO 18               | GPIO 18             | GPIO 18          | **GPIO 18**      | ✅ Đồng nhất                        |
-| Buzzer           | GPIO 19               | GPIO 19             | —                | **GPIO 19**      | ⚠️ test.ino dùng GPIO 19 cho Servo2 (cửa sổ), KHÔNG có buzzer |
-| Servo2 (Cửa sổ) | —                     | —                   | GPIO 19          | **— (Không có)** | ⚠️ test.ino có servo thứ 2, Wokwi/Web không có |
-| Pump (DC Motor)  | GPIO 21               | GPIO 21             | —                | **GPIO 21**      | ⚠️ test.ino không có pump           |
-| MQ-2 Analog (AO) | GPIO 34              | GPIO 34             | GPIO 34          | **GPIO 34**      | ✅ Đồng nhất                        |
-| MQ-2 Digital (DO)| GPIO 25               | GPIO 25             | —                | **GPIO 25**      | ⚠️ test.ino không dùng DO riêng    |
-| I2S WS (Mic)     | —                     | —                   | GPIO 25          | **— (Không có)** | 🚫 Mic INMP441 chỉ có trong test.ino |
-| I2S SCK (Mic)    | —                     | —                   | GPIO 26          | **— (Không có)** | 🚫 Mic INMP441 chỉ có trong test.ino |
-| I2S SD (Mic)     | —                     | —                   | GPIO 32          | **— (Không có)** | 🚫 Mic INMP441 chỉ có trong test.ino |
+## Danh sách thay đổi ít nhất để đáp ứng phần cứng thực tế
 
-### Các điểm xung đột cần lưu ý
+### 1. Mock Servo SG90 thứ 2 qua Topic Bơm (`pump`)
+* **Lý do**: Phía Web/Backend hiện chỉ định nghĩa 4 nút điều khiển (`led`, `servo`, `buzzer`, `pump`). Không có nút `servo2`.
+* **Giải pháp**: 
+  - Khai báo thêm `Servo windowServo;` gắn vào **GPIO 19**.
+  - Khi người dùng bật/tắt **Pump** trên Web, ESP32 sẽ nhận lệnh từ topic `aiot/esp32-s3/device/pump/set` và điều khiển **Servo #2** xoay 90° (Mở) / 0° (Đóng).
+  - Phản hồi trạng thái mở/đóng về topic `aiot/esp32-s3/device/pump/state` để giao diện Web cập nhật ngay lập tức.
 
-#### 1. GPIO 19: Buzzer vs Servo2 (cửa sổ)
-- **Web/Wokwi**: GPIO 19 = **Buzzer** (còi báo động)
-- **test.ino**: GPIO 19 = **Servo2** (servo cửa sổ)
-- **Embedded.ino đã chọn**: Theo Web/Wokwi → **Buzzer**
-- **Lý do**: Backend (`DeviceCatalog.java`) định nghĩa 4 thiết bị: `led`, `servo`, `buzzer`, `pump`. Không có `servo2`.
+### 2. Cảm biến DHT11
+* Dùng thư viện `#include <DHT.h>`, định nghĩa `#define DHTTYPE DHT11` trên chân **GPIO 15**.
 
-#### 2. GPIO 25: MQ-2 Digital Output vs I2S Word Select (Mic)
-- **Web/Wokwi**: GPIO 25 = **MQ-2 DO** (Digital Output cảm biến gas)
-- **test.ino**: GPIO 25 = **I2S WS** (Microphone INMP441)
-- **Embedded.ino đã chọn**: Theo Web/Wokwi → **MQ-2 DO**
-- **Lý do**: Firmware Embedded.ino không xử lý Microphone theo yêu cầu.
+### 3. Cảm biến Gas MQ-2
+* Chân Analog **GPIO 34** dùng để đọc thông số PPM gửi telemetry định kỳ.
+* Chân Digital **GPIO 25** dùng phát hiện khói khẩn cấp.
 
-#### 3. DHT11 vs DHT22
-- **Web/Wokwi**: Dùng **DHT22** (có độ chính xác cao hơn)
-- **test.ino**: Dùng **DHT11** (phần cứng thực tế)
-- **Embedded.ino đã chọn**: **DHT11** (theo phần cứng thực tế trong test.ino)
-- **Nếu dùng DHT22**: Đổi `#define DHTTYPE DHT11` thành `#define DHTTYPE DHT22` và thay `#include <DHT.h>` bằng `#include <DHTesp.h>` nếu cần.
+---
 
-### MQTT Topics mở rộng (CHƯA có trên Web/Backend)
+## MQTT Topics mở rộng
 
-Embedded.ino có thêm 3 topics mới chưa được xử lý ở phía Backend:
+| Topic | Hướng | Mô tả |
+|-------|-------|-------|
+| `aiot/esp32-s3/alert/smoke` | ESP → Web | Cảnh báo khí gas vượt ngưỡng |
+| `aiot/esp32-s3/device/mq2/threshold/set` | Web → ESP | Cài đặt ngưỡng cảnh báo MQ-2 từ xa |
+| `aiot/esp32-s3/device/mq2/threshold/state` | ESP → Web | Phản hồi giá trị ngưỡng hiện tại |
 
-| Topic                                      | Hướng       | Mô tả                                    |
-|--------------------------------------------|-------------|-------------------------------------------|
-| `aiot/esp32-s3/alert/smoke`                | ESP → Web   | Cảnh báo khí gas vượt ngưỡng              |
-| `aiot/esp32-s3/device/mq2/threshold/set`   | Web → ESP   | Cài đặt ngưỡng cảnh báo MQ-2 từ xa       |
-| `aiot/esp32-s3/device/mq2/threshold/state` | ESP → Web   | Phản hồi giá trị ngưỡng hiện tại         |
+---
 
-> **Để sử dụng các topic mở rộng này**, cần bổ sung code ở phía Backend (subscribe topic alert & threshold) và Frontend (UI cài đặt ngưỡng + hiển thị cảnh báo).
+## Thư viện Arduino cần cài đặt
 
-### Thư viện Arduino cần cài đặt
+| Thư viện | Dùng cho | Cài qua Library Manager |
+|----------|----------|-------------------------|
+| PubSubClient | MQTT Client | `PubSubClient` by Nick O'Leary |
+| ESP32Servo | Servo SG90 | `ESP32Servo` by Kevin Harrington |
+| DHT sensor library | Cảm biến DHT11 | `DHT sensor library` by Adafruit |
 
-| Thư viện       | Dùng cho               | Cài qua Library Manager     |
-|----------------|-------------------------|-----------------------------|
-| PubSubClient   | MQTT Client             | `PubSubClient` by Nick O'Leary |
-| ESP32Servo     | Servo SG90              | `ESP32Servo` by Kevin Harrington |
-| DHT            | Cảm biến DHT11/DHT22   | `DHT sensor library` by Adafruit |
+---
 
-### Cách nạp code
+## Cách nạp code
 
-1. Mở `Embedded.ino` bằng Arduino IDE.
-2. Cài đặt board **ESP32 Dev Module** (hoặc ESP32-S3 nếu dùng S3).
-3. Sửa `WIFI_SSID` và `WIFI_PASSWORD` trong code cho đúng mạng WiFi.
-4. Chọn đúng COM port và nhấn Upload.
+1. Mở `Embedded.ino` trong thư mục `backend/src/Embedded/` bằng Arduino IDE.
+2. Sửa `WIFI_SSID` và `WIFI_PASSWORD` trong code cho đúng WiFi nhà bạn.
+3. Chọn board **ESP32 Dev Module**, chọn đúng Cổng COM và bấm **Upload**.
