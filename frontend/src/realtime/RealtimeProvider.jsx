@@ -36,6 +36,7 @@ export function RealtimeProvider({ session, children }) {
   const [telemetry, setTelemetry] = useState(null)
   const [connectionState, setConnectionState] = useState('connecting')
   const [error, setError] = useState('')
+  const [fireAlert, setFireAlert] = useState(null)
 
   const updateDeviceState = useCallback((nextState) => {
     setDeviceStates((currentStates) => mergeDeviceState(currentStates, nextState))
@@ -93,6 +94,8 @@ export function RealtimeProvider({ session, children }) {
           updateDeviceState(message.data)
         } else if (message.type === 'TELEMETRY' && message.data) {
           setTelemetry(message.data)
+        } else if (message.type === 'ALERT' && message.data) {
+          setFireAlert(message.data)
         } else if (message.type === 'AUTH_ERROR') {
           allowReconnect = false
           setConnectionState('error')
@@ -121,8 +124,8 @@ export function RealtimeProvider({ session, children }) {
   }, [session?.access_token, updateDeviceState])
 
   const value = useMemo(
-    () => ({ deviceStates, telemetry, connectionState, error, updateDeviceState }),
-    [connectionState, deviceStates, error, telemetry, updateDeviceState],
+    () => ({ deviceStates, telemetry, connectionState, error, fireAlert, updateDeviceState }),
+    [connectionState, deviceStates, error, fireAlert, telemetry, updateDeviceState],
   )
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>

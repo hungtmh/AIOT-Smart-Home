@@ -115,6 +115,7 @@ export const settingsGroups = [
 
 export const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'Home' },
+  { id: 'alert', label: 'Alerts', icon: 'AlertTriangle' },
   { id: 'history', label: 'History', icon: 'History' },
   { id: 'automation', label: 'Automation', icon: 'SlidersHorizontal' },
   { id: 'settings', label: 'Settings', icon: 'Settings' },
