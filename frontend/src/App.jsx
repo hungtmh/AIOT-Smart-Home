@@ -3,6 +3,7 @@ import './App.css'
 import AutomationPage from './components/AutomationPage'
 import DashboardPage from './components/DashboardPage'
 import HistoryPage from './components/HistoryPage'
+import AlertPage from './components/AlertPage'
 import { icons } from './components/icons'
 import LoginPage from './components/LoginPage'
 import SettingsPage from './components/SettingsPage'
@@ -128,6 +129,7 @@ function App() {
           {activeNav === 'history' && <HistoryPage activeTab={activeHistoryTab} onTabChange={setActiveHistoryTab} />}
           {activeNav === 'automation' && <AutomationPage />}
           {activeNav === 'settings' && <SettingsPage email={email} />}
+          {activeNav === 'alert' && <AlertPage />}
           {activeNav === 'dashboard' && (
             <DashboardPage
               autoMode={autoMode}

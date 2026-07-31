@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import jakarta.annotation.PostConstruct;
 
 @Repository
 public class HistoryRepository {
@@ -25,6 +26,19 @@ public class HistoryRepository {
 
   public HistoryRepository(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
+  }
+
+  @PostConstruct
+  public void init() {
+    try {
+      ensureTelemetryTable();
+      ensureControlLogsTable();
+      ensureVoiceTable();
+      ensureAlertTable();
+      ensureFireAlertTable();
+    } catch (DataAccessException exception) {
+      warnDatabaseFallback(exception);
+    }
   }
 
   // ── Sensors (telemetry_readings) ──────────────────────────────────────────
@@ -229,6 +243,66 @@ public class HistoryRepository {
     }
   }
 
+  // ── Fire Alerts ───────────────────────────────────────────────────────────
+
+  public List<List<String>> findFireAlerts(int page, int size) {
+    if (!databaseAvailable) {
+      return List.of();
+    }
+
+    try {
+      ensureFireAlertTable();
+
+      return jdbcTemplate.query(
+          """
+          select device_id, image_path, confidence, detected_at, status
+          from fire_alert
+          order by detected_at desc
+          limit ? offset ?
+          """,
+          (rs, rowNum) -> {
+            OffsetDateTime detectedAt = toOffsetDateTime(rs.getTimestamp("detected_at"));
+            return List.of(
+                formatTime(detectedAt),
+                rs.getString("device_id"),
+                rs.getString("image_path") != null ? rs.getString("image_path") : "",
+                rs.getObject("confidence") != null ? rs.getDouble("confidence") + "" : "",
+                rs.getString("status") != null ? rs.getString("status") : "");
+          },
+          size,
+          page * size);
+    } catch (DataAccessException exception) {
+      warnDatabaseFallback(exception);
+      return List.of();
+    }
+  }
+
+  public long countFireAlerts() {
+    return countTable("fire_alert");
+  }
+
+  public void saveFireAlert(String deviceId, String imagePath, Double confidence, String status) {
+    if (!databaseAvailable) {
+      return;
+    }
+
+    try {
+      ensureFireAlertTable();
+
+      jdbcTemplate.update(
+          """
+          insert into fire_alert (device_id, image_path, confidence, status)
+          values (?, ?, ?, ?)
+          """,
+          deviceId,
+          imagePath,
+          confidence,
+          status);
+    } catch (DataAccessException exception) {
+      warnDatabaseFallback(exception);
+    }
+  }
+
   // ── Recent Activity (union from all tables) ───────────────────────────────
 
   public List<RecentActivityRow> findRecentActivity(int limit) {
@@ -355,6 +429,20 @@ public class HistoryRepository {
         """);
   }
 
+  private void ensureFireAlertTable() {
+    jdbcTemplate.update(
+        """
+        create table if not exists fire_alert (
+          id serial primary key,
+          device_id varchar(50) not null,
+          image_path varchar(255),
+          confidence double precision,
+          detected_at timestamp default now(),
+          status varchar(20)
+        )
+        """);
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private long countTable(String tableName) {
@@ -369,6 +457,7 @@ public class HistoryRepository {
         case "control_logs" -> ensureControlLogsTable();
         case "voice_command_history" -> ensureVoiceTable();
         case "alert_history" -> ensureAlertTable();
+        case "fire_alert" -> ensureFireAlertTable();
       }
 
       Long count = jdbcTemplate.queryForObject(

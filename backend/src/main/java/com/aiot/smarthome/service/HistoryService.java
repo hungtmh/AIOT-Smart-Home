@@ -67,6 +67,14 @@ public class HistoryService {
     return repository.findRecentActivity(limit);
   }
 
+  public void saveAlert(String alertType, String sensorValue, String threshold, String actionTaken, String status) {
+    repository.saveAlert(alertType, sensorValue, threshold, actionTaken, status);
+  }
+
+  public void saveFireAlert(String deviceId, String imagePath, Double confidence, String status) {
+    repository.saveFireAlert(deviceId, imagePath, confidence, status);
+  }
+
   private HistoryPage buildPage(String title, List<String> headers, List<List<String>> rows,
       int page, int size, long totalRecords) {
     int totalPages = Math.max(1, (int) Math.ceil((double) totalRecords / size));

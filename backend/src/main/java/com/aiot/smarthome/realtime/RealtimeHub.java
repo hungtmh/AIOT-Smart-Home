@@ -47,6 +47,10 @@ public class RealtimeHub {
     broadcast("TELEMETRY", telemetry);
   }
 
+  public void broadcastAlert(Object alert) {
+    broadcast("ALERT", alert);
+  }
+
   private void broadcast(String type, Object data) {
     final String payload;
 
