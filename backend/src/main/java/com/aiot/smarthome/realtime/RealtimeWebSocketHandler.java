@@ -3,6 +3,7 @@ package com.aiot.smarthome.realtime;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.aiot.smarthome.service.DeviceService;
+import com.aiot.smarthome.service.FireAlertService;
 import com.aiot.smarthome.service.TelemetryService;
 import java.io.IOException;
 import java.util.Map;
@@ -26,18 +27,22 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler {
   private final RealtimeHub realtimeHub;
   private final DeviceService deviceService;
   private final TelemetryService telemetryService;
+  private final FireAlertService fireAlertService;
 
   public RealtimeWebSocketHandler(
-      JwtDecoder jwtDecoder,
-      ObjectMapper objectMapper,
-      RealtimeHub realtimeHub,
-      DeviceService deviceService,
-      TelemetryService telemetryService) {
+        JwtDecoder jwtDecoder,
+        ObjectMapper objectMapper,
+        RealtimeHub realtimeHub,
+        DeviceService deviceService,
+        TelemetryService telemetryService,
+        FireAlertService fireAlertService
+  ) {
     this.jwtDecoder = jwtDecoder;
     this.objectMapper = objectMapper;
     this.realtimeHub = realtimeHub;
     this.deviceService = deviceService;
     this.telemetryService = telemetryService;
+    this.fireAlertService = fireAlertService;
   }
 
   @Override
@@ -69,6 +74,12 @@ public class RealtimeWebSocketHandler extends TextWebSocketHandler {
       send(authenticatedSession, Map.of(
           "type", "TELEMETRY",
           "data", telemetryService.getLatestTelemetry()));
+      send(authenticatedSession, Map.of(
+          "type",
+          "FIRE_STATUS",
+          "data",
+          fireAlertService.getLatest()
+      ));
       logger.debug("Realtime session {} authenticated for user {}", session.getId(), jwt.getSubject());
     } catch (JwtException exception) {
       logger.warn("Rejected realtime session {}: {}", session.getId(), exception.getMessage());

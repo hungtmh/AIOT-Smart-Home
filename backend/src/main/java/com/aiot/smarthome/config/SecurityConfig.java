@@ -45,7 +45,14 @@ public class SecurityConfig {
           authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
 
           if (jwtEnabled) {
-            authorize.requestMatchers("/api/**").authenticated();
+
+              authorize.requestMatchers(
+                  "/api/fire-alert"
+              ).permitAll();
+
+              authorize.requestMatchers("/api/**")
+                  .authenticated();
+
           } else {
             logger.warn("SUPABASE_JWT_SECRET is not configured; /api/** is temporarily public.");
             authorize.requestMatchers("/api/**").permitAll();

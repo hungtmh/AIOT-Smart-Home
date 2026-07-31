@@ -21,7 +21,7 @@ create table if not exists control_logs (
   result text not null,
   created_at timestamptz not null default now()
 );
-
+  su
 create table if not exists telemetry_readings (
   id bigserial primary key,
   temperature numeric(5, 2) not null,
@@ -45,3 +45,4 @@ values
   ('buzzer', false, false),
   ('pump', false, false)
 on conflict (device_id) do nothing;
+

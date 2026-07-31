@@ -2,6 +2,7 @@ package com.aiot.smarthome.realtime;
 
 import com.aiot.smarthome.dto.DeviceStateResponse;
 import com.aiot.smarthome.dto.TelemetryResponse;
+import com.aiot.smarthome.dto.FireAlertResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -45,6 +46,10 @@ public class RealtimeHub {
 
   public void broadcastTelemetry(TelemetryResponse telemetry) {
     broadcast("TELEMETRY", telemetry);
+  }
+
+  public void broadcastFireAlert(FireAlertResponse alert) {
+    broadcast("FIRE_ALERT", alert);
   }
 
   private void broadcast(String type, Object data) {
