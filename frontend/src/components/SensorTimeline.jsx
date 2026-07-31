@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react'
-import { seriesLegend } from '../data/mockData'
 import { getTelemetryHistory } from '../lib/api'
 import { useRealtime } from '../realtime/RealtimeContext'
 import { icons } from './icons'
@@ -101,6 +100,17 @@ function SensorTimeline() {
   const envSeries = derivedChartSeries.filter(s => (s.key === 'temperature' || s.key === 'humidity') && visibleSeries[s.key])
   const smokeSeries = derivedChartSeries.filter(s => s.key === 'smoke' && visibleSeries[s.key])
 
+  // Get latest values for legend
+  const currentTemp = telemetryList.length > 0 ? telemetryList[0].temperature : (latestTelemetry?.temperature ?? 0)
+  const currentHum = telemetryList.length > 0 ? telemetryList[0].humidity : (latestTelemetry?.humidity ?? 0)
+  const currentSmoke = telemetryList.length > 0 ? telemetryList[0].smokePpm : (latestTelemetry?.smokePpm ?? 0)
+
+  const dynamicLegend = [
+    { key: 'temperature', label: 'Temperature', value: `${currentTemp} C`, color: '#dc2626' },
+    { key: 'humidity', label: 'Humidity', value: `${currentHum}%`, color: '#2563eb' },
+    { key: 'smoke', label: 'Smoke', value: `${currentSmoke} ppm`, color: '#64748b' },
+  ]
+
   return (
     <section className="device-section" aria-label="Sensor data timeline">
       <div className="section-heading">
@@ -116,7 +126,7 @@ function SensorTimeline() {
 
       <div className="timeline-panel">
         <div className="timeline-toolbar">
-          {seriesLegend.map((item) => (
+          {dynamicLegend.map((item) => (
             <label className="series-toggle" key={item.label}>
               <input
                 type="checkbox"
@@ -148,25 +158,25 @@ function SensorTimeline() {
               </g>
               <g className="axis-labels">
                 {/* Temp Axis (Left) */}
-                <text x="28" y="63" fill="#dc2626">35</text>
-                <text x="28" y="108" fill="#dc2626">32.5</text>
-                <text x="28" y="153" fill="#dc2626">30</text>
+                <text x="28" y="63" fill="#dc2626">80</text>
+                <text x="28" y="108" fill="#dc2626">62.5</text>
+                <text x="28" y="153" fill="#dc2626">45</text>
                 <text x="28" y="198" fill="#dc2626">27.5</text>
-                <text x="28" y="243" fill="#dc2626">25</text>
+                <text x="28" y="243" fill="#dc2626">10</text>
                 
                 {/* Humidity Axis (Right) */}
                 <text x="930" y="63" fill="#2563eb">100</text>
-                <text x="930" y="108" fill="#2563eb">85</text>
-                <text x="930" y="153" fill="#2563eb">70</text>
-                <text x="930" y="198" fill="#2563eb">55</text>
-                <text x="930" y="243" fill="#2563eb">40</text>
+                <text x="930" y="108" fill="#2563eb">75</text>
+                <text x="930" y="153" fill="#2563eb">50</text>
+                <text x="930" y="198" fill="#2563eb">25</text>
+                <text x="930" y="243" fill="#2563eb">0</text>
                 
                 <text x="440" y="292">Time</text>
               </g>
               {envSeries.map((series) => {
                 const isTemp = series.key === 'temperature'
-                const min = isTemp ? 25 : 40
-                const max = isTemp ? 35 : 100
+                const min = isTemp ? 10 : 0
+                const max = isTemp ? 80 : 100
                 const pointsStr = series.points.map(p => `${p.x},${getMappedY(p.value, min, max)}`).join(' ')
                 
                 return (
@@ -223,17 +233,17 @@ function SensorTimeline() {
               </g>
               <g className="axis-labels">
                 {/* Smoke Axis (Left) */}
-                <text x="28" y="63" fill="#64748b">50</text>
-                <text x="28" y="108" fill="#64748b">37.5</text>
-                <text x="28" y="153" fill="#64748b">25</text>
-                <text x="28" y="198" fill="#64748b">12.5</text>
+                <text x="28" y="63" fill="#64748b">100</text>
+                <text x="28" y="108" fill="#64748b">75</text>
+                <text x="28" y="153" fill="#64748b">50</text>
+                <text x="28" y="198" fill="#64748b">25</text>
                 <text x="28" y="243" fill="#64748b">0</text>
                 
                 <text x="440" y="292">Time</text>
               </g>
               {smokeSeries.map((series) => {
                 const min = 0
-                const max = 50
+                const max = 100
                 const pointsStr = series.points.map(p => `${p.x},${getMappedY(p.value, min, max)}`).join(' ')
                 
                 return (

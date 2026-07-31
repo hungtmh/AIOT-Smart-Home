@@ -3,6 +3,7 @@ package com.aiot.smarthome.repository;
 import com.aiot.smarthome.dto.RecentActivityRow;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -18,6 +19,8 @@ public class HistoryRepository {
   private static final Logger logger = LoggerFactory.getLogger(HistoryRepository.class);
   private static final DateTimeFormatter TIME_FORMAT =
       DateTimeFormatter.ofPattern("dd/MM/yyyy, HH:mm:ss");
+  private static final ZoneId APP_ZONE = ZoneId.of(
+      System.getenv().getOrDefault("APP_TIMEZONE", "Asia/Ho_Chi_Minh"));
 
   private final JdbcTemplate jdbcTemplate;
   private boolean databaseAvailable = true;
@@ -393,7 +396,7 @@ public class HistoryRepository {
       return "";
     }
 
-    return dateTime.format(TIME_FORMAT);
+    return dateTime.atZoneSameInstant(APP_ZONE).format(TIME_FORMAT);
   }
 
   private String formatTimeShort(OffsetDateTime dateTime) {
@@ -401,7 +404,7 @@ public class HistoryRepository {
       return "";
     }
 
-    return dateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    return dateTime.atZoneSameInstant(APP_ZONE).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
   }
 
   private void warnDatabaseFallback(DataAccessException exception) {
