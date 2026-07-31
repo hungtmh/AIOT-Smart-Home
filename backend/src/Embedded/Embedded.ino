@@ -74,7 +74,7 @@ const char* MQ2_THRESHOLD_STATE_TOPIC = "aiot/esp32-s3/device/mq2/threshold/stat
 #define DHTPIN       15   // DHT11 Data
 #define DHTTYPE      DHT11
 #define SERVO_PIN    18   // Servo SG90 #1 (Cửa chính)
-#define SERVO2_PIN   19   // Servo SG90 #2 (Cửa sổ - Mock qua topic Pump của Web)
+#define RELAY_PUMP_PIN 19 // Relay điều khiển máy bơm nước
 #define BUZZER_PIN   21   // Buzzer cảnh báo
 #define MQ2_AO_PIN   34   // MQ-2 Analog Output  (đọc giá trị PPM)
 
@@ -159,7 +159,6 @@ static unsigned long      lastVoiceActionMs = 0;
 WiFiClientSecure wifiClient;
 PubSubClient     mqtt(wifiClient);
 Servo            doorServo;    // Servo 1 (Cửa)
-Servo            windowServo;  // Servo 2 (Cửa sổ - Mock Pump)
 DHT              dhtSensor(DHTPIN, DHTTYPE);
 
 // =============================================================================
@@ -251,11 +250,11 @@ void setBuzzer(bool enabled) {
 
 void setPump(bool enabled) {
   pumpState = enabled;
-  windowServo.write(enabled ? 90 : 0); // Xoay Servo thứ 2 sang 90° (OPEN) khi ON, 0° (CLOSE) khi OFF
-  Serial.printf("[PUMP -> SERVO2] %s\n", enabled ? "OPEN (90°)" : "CLOSE (0°)");
+  digitalWrite(RELAY_PUMP_PIN, enabled ? HIGH : LOW);
+  Serial.printf("[PUMP -> RELAY] %s\n", enabled ? "ON" : "OFF");
   publishState(PUMP_STATE_TOPIC, pumpState);
 
-  // Ghi nhận thời điểm bật để auto-off (tự đóng servo 2)
+  // Ghi nhận thời điểm bật để auto-off (tự tắt máy bơm)
   if (enabled) {
     pumpOnTimestamp = millis();
   } else {
@@ -350,6 +349,12 @@ void handleSmokeAlert() {
 
   if (smokePpm >= mq2Threshold) {
     unsigned long now = millis();
+
+    // Tự động bật còi báo động khi vượt ngưỡng
+    if (!buzzerState) {
+      setBuzzer(true);
+      telemetryEnabled = true; // Bật telemetry để cập nhật lên Web
+    }
 
     // Chống spam: chỉ gửi nếu đã qua thời gian cooldown
     if (now - lastAlertMs >= ALERT_COOLDOWN_MS) {
@@ -487,6 +492,19 @@ static void audioTask(void* pvParameters) {
     for (int i = 0; i < samplesRead; i++) {
       pcmBlock[i] = (int16_t)(i2sRawBuf[i] >> 14);
     }
+
+    // --- Log kiểm tra microphone (1 giây / lần) ---
+    static int logCounter = 0;
+    if (logCounter++ % 4 == 0) {
+      int16_t maxAmplitude = 0;
+      for (int i = 0; i < samplesRead; i++) {
+        if (abs(pcmBlock[i]) > maxAmplitude) {
+          maxAmplitude = abs(pcmBlock[i]);
+        }
+      }
+      Serial.printf("[VOICE-MIC] Read %d samples. Max amplitude in block: %d\n", samplesRead, maxAmplitude);
+    }
+    // ---------------------------------------------
 
     // Gửi block PCM vào Ring Buffer.
     // Timeout = 0: nếu Ring Buffer đầy, bỏ block này ngay lập tức.
@@ -718,10 +736,12 @@ void setup() {
   // --- Cấu hình chân GPIO ---
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(RELAY_PUMP_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
   digitalWrite(BUZZER_PIN, LOW);
+  digitalWrite(RELAY_PUMP_PIN, LOW);
 
-  // --- Servo SG90 #1 (Cửa chính) & Servo SG90 #2 (Cửa sổ / Pump Mock) ---
+  // --- Servo SG90 #1 (Cửa chính) ---
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
@@ -730,10 +750,6 @@ void setup() {
   doorServo.setPeriodHertz(50);
   doorServo.attach(SERVO_PIN, 500, 2400);
   doorServo.write(90);
-
-  windowServo.setPeriodHertz(50);
-  windowServo.attach(SERVO2_PIN, 500, 2400);
-  windowServo.write(0);
 
   // --- DHT11 ---
   dhtSensor.begin();
