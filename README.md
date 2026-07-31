@@ -22,9 +22,9 @@ wokwi/     Wokwi ESP32 MQTT simulator
 arduino/   Sketch cho board that
 ```
 
-## 2. Yeu cau cai dat & Chay du an nhanh (Docker Compose - Khuyen dung)
+## 2. Cach chay du an hieu qua nhat: Docker Compose
 
-Ban **khong can cài dat Java, Node.js hay Maven** thu cong. Chi can cài dat **Docker Desktop**.
+Hien tai, ban **chi can dung lenh Docker Compose** de build va chay toan bo du an. Ban **KHONG CAN** cai dat Java, Node.js hay Maven thu cong. Chi can cai dat **Docker Desktop**.
 
 ### Cac buoc khoi chay:
 

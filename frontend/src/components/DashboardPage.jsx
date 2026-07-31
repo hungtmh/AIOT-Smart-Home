@@ -29,7 +29,7 @@ function deviceOn(deviceStates, deviceId) {
 function buildLiveSensorCards(telemetry, deviceStates) {
   const ledOn = deviceOn(deviceStates, 'led')
   const servoOpen = deviceOn(deviceStates, 'servo')
-  const buzzerOn = deviceOn(deviceStates, 'buzzer')
+  const pumpOn = deviceOn(deviceStates, 'pump')
   const temperature = telemetry?.temperature ?? 28.4
   const humidity = telemetry?.humidity ?? 64
   const smokePpm = telemetry?.smokePpm ?? 18
@@ -55,8 +55,8 @@ function buildLiveSensorCards(telemetry, deviceStates) {
       return { ...card, value: Math.round(smokePpm).toString(), state: smokePpm >= 70 ? 'Danger' : 'Safe' }
     }
 
-    if (card.label === 'Buzzer') {
-      return { ...card, value: buzzerOn ? 'ON' : 'OFF', state: buzzerOn ? 'Alarm active' : 'No alarm' }
+    if (card.label === 'Mini Water Pump') {
+      return { ...card, value: pumpOn ? 'ON' : 'OFF', state: pumpOn ? 'Pump active' : 'Pump off' }
     }
 
     return card
@@ -118,27 +118,7 @@ function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
       <MetricGrid sensors={liveSensors} />
 
       <section className="status-layout" aria-label="System status">
-        <article className="panel automation-panel">
-          <div className="panel-title">
-            <div>
-              <SlidersHorizontal size={19} aria-hidden="true" />
-              <h2>Automation Control</h2>
-            </div>
-            <button
-              className={`switch ${autoMode ? 'on' : ''}`}
-              type="button"
-              aria-pressed={autoMode}
-              onClick={onToggleAutoMode}
-            >
-              <span></span>
-            </button>
-          </div>
-          <div className="automation-body">
-            <span className="badge success">Auto Mode: {autoMode ? 'ON' : 'OFF'}</span>
-            <span className="badge info">User Interaction: Inactive</span>
-            <span className="badge neutral">Threshold Profile: Home</span>
-          </div>
-        </article>
+
 
         <article className="panel">
           <div className="panel-title">

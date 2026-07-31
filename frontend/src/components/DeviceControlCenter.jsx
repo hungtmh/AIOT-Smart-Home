@@ -8,7 +8,6 @@ const { Wifi } = icons
 
 function getNextMetric(device, nextStatus) {
   if (device.id === 'servo') return nextStatus ? 'OPEN' : 'CLOSE'
-  if (device.id === 'buzzer') return nextStatus ? 'ON' : 'OFF'
   return nextStatus ? 'ON' : 'OFF'
 }
 

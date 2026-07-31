@@ -93,3 +93,11 @@ export function getHistoryCounts() {
 export function getRecentActivity(limit = 10) {
   return request(`/api/history/recent-activity?limit=${limit}`)
 }
+
+export function getTelemetryHistory(limit = 30) {
+  return request(`/api/telemetry/history?limit=${limit}`)
+}
+
+export function getControlLogs(limit = 30) {
+  return request(`/api/devices/history/logs?limit=${limit}`)
+}

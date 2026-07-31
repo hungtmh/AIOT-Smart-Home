@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { chartSeries, seriesLegend, timelineRows } from '../data/mockData'
+import { useState, useEffect, useMemo } from 'react'
+import { seriesLegend } from '../data/mockData'
+import { getTelemetryHistory } from '../lib/api'
+import { useRealtime } from '../realtime/RealtimeContext'
 import { icons } from './icons'
 
 const { BarChart3, RefreshCw } = icons
@@ -27,18 +29,86 @@ function SensorTimeline() {
     }))
   }
 
+  const [telemetryList, setTelemetryList] = useState([])
+  const { telemetry: latestTelemetry } = useRealtime()
+
+  async function fetchHistory() {
+    try {
+      const data = await getTelemetryHistory(10)
+      setTelemetryList(data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    fetchHistory()
+  }, [])
+
+  useEffect(() => {
+    if (latestTelemetry) {
+      setTelemetryList(prev => {
+        // Only append if it's a new measurement
+        if (prev.length > 0 && prev[0].measuredAt === latestTelemetry.measuredAt) {
+          return prev
+        }
+        const next = [latestTelemetry, ...prev]
+        return next.slice(0, 10)
+      })
+    }
+  }, [latestTelemetry])
+
+  const { derivedChartSeries, derivedTimelineRows } = useMemo(() => {
+    const list = [...telemetryList].reverse()
+    const pointsX = [70, 160, 250, 340, 430, 520, 610, 700, 790, 900]
+    
+    const fmtTime = (ts) => {
+      if (!ts) return ''
+      const d = new Date(ts)
+      return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`
+    }
+
+    const tPoints = []
+    const hPoints = []
+    const sPoints = []
+
+    for (let i = 0; i < list.length; i++) {
+      const item = list[i]
+      const x = pointsX[i] || (70 + i * 90)
+      const timeStr = fmtTime(item.measuredAt)
+      tPoints.push({ x, value: item.temperature?.toString(), time: timeStr })
+      hPoints.push({ x, value: item.humidity?.toString(), time: timeStr })
+      sPoints.push({ x, value: item.smokePpm?.toString(), time: timeStr })
+    }
+
+    const rows = telemetryList.map(item => ({
+      time: fmtTime(item.measuredAt),
+      temperature: `${item.temperature} C`,
+      humidity: `${item.humidity}%`,
+      smoke: `${item.smokePpm} ppm`
+    }))
+
+    const cSeries = [
+      { key: 'temperature', label: 'Temperature', unit: 'C', color: '#dc2626', points: tPoints },
+      { key: 'humidity', label: 'Humidity', unit: '%', color: '#2563eb', points: hPoints },
+      { key: 'smoke', label: 'Smoke', unit: 'ppm', color: '#64748b', points: sPoints },
+    ]
+
+    return { derivedChartSeries: cSeries, derivedTimelineRows: rows }
+  }, [telemetryList])
+
   // Filter series for specific charts
-  const envSeries = chartSeries.filter(s => (s.key === 'temperature' || s.key === 'humidity') && visibleSeries[s.key])
-  const smokeSeries = chartSeries.filter(s => s.key === 'smoke' && visibleSeries[s.key])
+  const envSeries = derivedChartSeries.filter(s => (s.key === 'temperature' || s.key === 'humidity') && visibleSeries[s.key])
+  const smokeSeries = derivedChartSeries.filter(s => s.key === 'smoke' && visibleSeries[s.key])
 
   return (
     <section className="device-section" aria-label="Sensor data timeline">
       <div className="section-heading">
         <div>
           <h2>Sensor Data Timeline</h2>
-          <p>Mock records in the latest monitoring window</p>
+          <p>Real-time records from PostgreSQL</p>
         </div>
-        <button className="refresh-button" type="button">
+        <button className="refresh-button" type="button" onClick={fetchHistory}>
           <RefreshCw size={16} aria-hidden="true" />
           Refresh
         </button>
@@ -215,7 +285,7 @@ function SensorTimeline() {
               </tr>
             </thead>
             <tbody>
-              {timelineRows.map((row) => (
+              {derivedTimelineRows.map((row) => (
                 <tr key={row.time}>
                   <td>{row.time}</td>
                   <td>{row.temperature}</td>

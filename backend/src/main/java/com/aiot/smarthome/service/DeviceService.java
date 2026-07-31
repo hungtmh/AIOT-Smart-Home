@@ -1,5 +1,6 @@
 package com.aiot.smarthome.service;
 
+import com.aiot.smarthome.dto.ControlLogResponse;
 import com.aiot.smarthome.dto.DeviceStateResponse;
 import com.aiot.smarthome.model.DeviceDefinition;
 import com.aiot.smarthome.model.DeviceState;
@@ -61,6 +62,10 @@ public class DeviceService {
     DeviceState nextState = repository.setReportedState(device, state);
     repository.addControlLog(device.id(), state, "esp32", "STATE_REPORTED");
     realtimeHub.broadcastDeviceState(DeviceStateResponse.from(nextState, device.name(), device.type(), true));
+  }
+
+  public List<ControlLogResponse> getControlLogs(int limit) {
+    return repository.findControlLogs(limit);
   }
 
   private DeviceStateResponse toResponse(DeviceState state, boolean mqttPublished) {

@@ -4,13 +4,12 @@ export const sensorCards = [
   { label: 'Temperature', value: '28.4', unit: 'C', icon: 'Thermometer', state: 'Normal', tone: 'blue' },
   { label: 'Humidity', value: '64', unit: '%', icon: 'Droplets', state: 'Comfort', tone: 'cyan' },
   { label: 'Smoke Level', value: '18', unit: 'ppm', icon: 'Wind', state: 'Safe', tone: 'green' },
-  { label: 'Buzzer', value: 'OFF', unit: '', icon: 'BellRing', state: 'No alarm', tone: 'amber' },
+  { label: 'Mini Water Pump', value: 'OFF', unit: '', icon: 'Droplets', state: 'Pump off', tone: 'cyan' },
 ]
 
 export const initialDevices = [
   { id: 'led', name: 'LED Light', description: 'Relay CH1', icon: 'Lightbulb', status: true, metric: 'ON', tone: 'blue' },
   { id: 'servo', name: 'Servo Motor', description: 'Open / close valve', icon: 'SlidersHorizontal', status: true, metric: 'OPEN', tone: 'indigo' },
-  { id: 'buzzer', name: 'Buzzer Alarm', description: 'Fire alert output', icon: 'BellRing', status: false, metric: 'OFF', tone: 'amber' },
   { id: 'pump', name: 'Mini Water Pump', description: 'Mini Water Pump 5VDC', icon: 'Droplets', status: false, metric: 'OFF', tone: 'cyan' },
 ]
 
@@ -20,69 +19,7 @@ export const seriesLegend = [
   { key: 'smoke', label: 'Smoke', value: '18 ppm', color: '#64748b' },
 ]
 
-export const chartSeries = [
-  {
-    key: 'temperature',
-    label: 'Temperature',
-    unit: 'C',
-    color: '#dc2626',
-    points: [
-      { x: 70, y: 186, value: '28.0', time: '21:15:30' },
-      { x: 160, y: 183, value: '28.2', time: '21:16:00' },
-      { x: 250, y: 184, value: '28.1', time: '21:16:30' },
-      { x: 340, y: 178, value: '28.5', time: '21:17:00' },
-      { x: 430, y: 176, value: '28.7', time: '21:17:30' },
-      { x: 520, y: 182, value: '28.3', time: '21:18:00' },
-      { x: 610, y: 188, value: '27.9', time: '21:18:30' },
-      { x: 700, y: 190, value: '27.8', time: '21:19:00' },
-      { x: 790, y: 185, value: '28.1', time: '21:19:30' },
-      { x: 900, y: 187, value: '28.0', time: '21:20:00' },
-    ],
-  },
-  {
-    key: 'humidity',
-    label: 'Humidity',
-    unit: '%',
-    color: '#2563eb',
-    points: [
-      { x: 70, y: 82, value: '66', time: '21:15:30' },
-      { x: 160, y: 88, value: '65', time: '21:16:00' },
-      { x: 250, y: 91, value: '64', time: '21:16:30' },
-      { x: 340, y: 95, value: '63', time: '21:17:00' },
-      { x: 430, y: 102, value: '61', time: '21:17:30' },
-      { x: 520, y: 96, value: '63', time: '21:18:00' },
-      { x: 610, y: 100, value: '62', time: '21:18:30' },
-      { x: 700, y: 94, value: '64', time: '21:19:00' },
-      { x: 790, y: 101, value: '62', time: '21:19:30' },
-      { x: 900, y: 98, value: '63', time: '21:20:00' },
-    ],
-  },
-  {
-    key: 'smoke',
-    label: 'Smoke',
-    unit: 'ppm',
-    color: '#64748b',
-    points: [
-      { x: 70, y: 216, value: '14', time: '21:15:30' },
-      { x: 160, y: 218, value: '13', time: '21:16:00' },
-      { x: 250, y: 213, value: '16', time: '21:16:30' },
-      { x: 340, y: 211, value: '17', time: '21:17:00' },
-      { x: 430, y: 205, value: '20', time: '21:17:30' },
-      { x: 520, y: 198, value: '24', time: '21:18:00' },
-      { x: 610, y: 207, value: '19', time: '21:18:30' },
-      { x: 700, y: 214, value: '15', time: '21:19:00' },
-      { x: 790, y: 210, value: '18', time: '21:19:30' },
-      { x: 900, y: 216, value: '14', time: '21:20:00' },
-    ],
-  },
-]
 
-export const timelineRows = [
-  { time: '21:20:00', temperature: '28.4 C', humidity: '64%', smoke: '18 ppm' },
-  { time: '21:19:30', temperature: '28.2 C', humidity: '63%', smoke: '17 ppm' },
-  { time: '21:19:00', temperature: '27.9 C', humidity: '64%', smoke: '19 ppm' },
-  { time: '21:18:30', temperature: '29.1 C', humidity: '61%', smoke: '24 ppm' },
-]
 
 export const automationRules = [
   {

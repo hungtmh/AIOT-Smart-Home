@@ -1,5 +1,6 @@
 package com.aiot.smarthome.controller;
 
+import com.aiot.smarthome.dto.ControlLogResponse;
 import com.aiot.smarthome.dto.DeviceCommandRequest;
 import com.aiot.smarthome.dto.DeviceStateResponse;
 import com.aiot.smarthome.service.DeviceService;
@@ -42,5 +43,11 @@ public class DeviceController {
   @PostMapping("/{deviceId}/toggle")
   public ResponseEntity<DeviceStateResponse> toggleDevice(@PathVariable String deviceId) {
     return ResponseEntity.ok(deviceService.toggleDevice(deviceId));
+  }
+
+  @GetMapping("/history/logs")
+  public List<ControlLogResponse> getControlLogs(
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "30") int limit) {
+    return deviceService.getControlLogs(limit);
   }
 }
