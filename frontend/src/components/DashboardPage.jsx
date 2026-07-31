@@ -1,4 +1,6 @@
-import { recentActivityRows, sensorCards } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { sensorCards } from '../data/mockData'
+import { getRecentActivity } from '../lib/api'
 import DeviceControlCenter from './DeviceControlCenter'
 import { icons } from './icons'
 import MetricGrid from './MetricGrid'
@@ -76,11 +78,18 @@ function formatUpdatedAt(value, fallback) {
 
 function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
   const { telemetry: latestTelemetry, deviceStates } = useRealtime()
+  const [recentActivity, setRecentActivity] = useState([])
   const liveSensors = buildLiveSensorCards(latestTelemetry, deviceStates)
 
   const smokePpm = Math.round(latestTelemetry?.smokePpm ?? 18)
   const smokeSafe = smokePpm < 70
   const displayLastUpdated = formatUpdatedAt(latestTelemetry?.measuredAt, lastUpdated)
+
+  useEffect(() => {
+    getRecentActivity()
+      .then(setRecentActivity)
+      .catch((error) => console.error('Failed to fetch recent activity:', error))
+  }, [])
 
   return (
     <>
@@ -185,15 +194,21 @@ function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
             </div>
           </div>
           <div className="history-list">
-            {recentActivityRows.map((row) => (
-              <div className="history-row" key={`${row.time}-${row.event}`}>
-                <time>{row.time}</time>
-                <div>
-                  <strong>{row.event}</strong>
-                  <span>{row.detail}</span>
-                </div>
+            {recentActivity.length === 0 ? (
+              <div className="history-row">
+                <div><span>No recent activity</span></div>
               </div>
-            ))}
+            ) : (
+              recentActivity.map((row, index) => (
+                <div className="history-row" key={`${row.time}-${index}`}>
+                  <time>{row.time}</time>
+                  <div>
+                    <strong>{row.event}</strong>
+                    <span>{row.detail}</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </article>
       </section>

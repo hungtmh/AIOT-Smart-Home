@@ -4,15 +4,20 @@ import { icons } from './icons'
 
 const { BarChart3, RefreshCw } = icons
 
+// Helper for calculating y-coordinate dynamically
+function getMappedY(valStr, min, max) {
+  const v = parseFloat(valStr)
+  if (isNaN(v)) return 240 // Fallback to bottom if invalid
+  const fraction = Math.max(0, Math.min(1, (v - min) / (max - min)))
+  return 240 - fraction * 180 // Bottom is 240, top is 60 (range = 180)
+}
+
 function SensorTimeline() {
   const [hoveredPoint, setHoveredPoint] = useState(null)
   const [visibleSeries, setVisibleSeries] = useState({
     temperature: true,
     humidity: true,
     smoke: true,
-    led: false,
-    servo: false,
-    buzzer: false,
   })
 
   function toggleSeries(seriesKey) {
@@ -21,6 +26,10 @@ function SensorTimeline() {
       [seriesKey]: !current[seriesKey],
     }))
   }
+
+  // Filter series for specific charts
+  const envSeries = chartSeries.filter(s => (s.key === 'temperature' || s.key === 'humidity') && visibleSeries[s.key])
+  const smokeSeries = chartSeries.filter(s => s.key === 'smoke' && visibleSeries[s.key])
 
   return (
     <section className="device-section" aria-label="Sensor data timeline">
@@ -51,73 +60,148 @@ function SensorTimeline() {
           ))}
         </div>
 
-        <div className="chart-card">
-          <div className="chart-title">
-            <BarChart3 size={18} aria-hidden="true" />
-            Sensor Data Timeline
-          </div>
-          <svg className="timeline-chart" viewBox="0 0 960 300" role="img" aria-label="Mock sensor timeline chart">
-            <g className="grid-lines">
-              {[60, 105, 150, 195, 240].map((y) => (
-                <line key={`h-${y}`} x1="58" x2="925" y1={y} y2={y} />
-              ))}
-              {[140, 260, 380, 500, 620, 740, 860].map((x) => (
-                <line key={`v-${x}`} x1={x} x2={x} y1="45" y2="255" />
-              ))}
-            </g>
-            <g className="axis-labels">
-              <text x="28" y="63">70</text>
-              <text x="28" y="108">55</text>
-              <text x="28" y="153">40</text>
-              <text x="28" y="198">25</text>
-              <text x="34" y="243">10</text>
-              <text x="440" y="292">Time</text>
-            </g>
-            {chartSeries
-              .filter((series) => visibleSeries[series.key])
-              .map((series) => (
-                <g key={series.key}>
-                  <polyline
-                    className="line"
-                    points={series.points.map((point) => `${point.x},${point.y}`).join(' ')}
-                    style={{ stroke: series.color }}
-                  />
-                  {series.points.map((point) => (
-                    <circle
-                      className="point"
-                      cx={point.x}
-                      cy={point.y}
-                      fill={series.color}
-                      key={`${series.key}-${point.time}`}
-                      r="5"
-                      onMouseEnter={() =>
-                        setHoveredPoint({
-                          ...point,
-                          color: series.color,
-                          label: series.label,
-                          unit: series.unit,
-                        })
-                      }
-                      onMouseLeave={() => setHoveredPoint(null)}
-                    />
-                  ))}
-                </g>
-              ))}
-            {hoveredPoint && (
-              <g
-                className="chart-tooltip"
-                transform={`translate(${Math.min(hoveredPoint.x + 14, 770)} ${Math.max(hoveredPoint.y - 62, 30)})`}
-              >
-                <rect width="172" height="58" rx="8" />
-                <circle cx="15" cy="20" r="5" fill={hoveredPoint.color} />
-                <text x="28" y="24">
-                  {hoveredPoint.label}: {hoveredPoint.value}
-                  {hoveredPoint.unit ? ` ${hoveredPoint.unit}` : ''}
-                </text>
-                <text x="15" y="44">Time: {hoveredPoint.time}</text>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '16px', padding: '16px' }}>
+          {/* Chart 1: Environment (Temp/Humidity) */}
+          <div className="chart-card" style={{ padding: 0, border: 'none' }}>
+            <div className="chart-title">
+              <BarChart3 size={18} aria-hidden="true" />
+              Environment (Temperature & Humidity)
+            </div>
+            <svg className="timeline-chart" viewBox="0 0 960 300" role="img" aria-label="Environment chart">
+              <g className="grid-lines">
+                {[60, 105, 150, 195, 240].map((y) => (
+                  <line key={`h-${y}`} x1="58" x2="925" y1={y} y2={y} />
+                ))}
+                {[140, 260, 380, 500, 620, 740, 860].map((x) => (
+                  <line key={`v-${x}`} x1={x} x2={x} y1="45" y2="255" />
+                ))}
               </g>
-            )}
-          </svg>
+              <g className="axis-labels">
+                {/* Temp Axis (Left) */}
+                <text x="28" y="63" fill="#dc2626">35</text>
+                <text x="28" y="108" fill="#dc2626">32.5</text>
+                <text x="28" y="153" fill="#dc2626">30</text>
+                <text x="28" y="198" fill="#dc2626">27.5</text>
+                <text x="28" y="243" fill="#dc2626">25</text>
+                
+                {/* Humidity Axis (Right) */}
+                <text x="930" y="63" fill="#2563eb">100</text>
+                <text x="930" y="108" fill="#2563eb">85</text>
+                <text x="930" y="153" fill="#2563eb">70</text>
+                <text x="930" y="198" fill="#2563eb">55</text>
+                <text x="930" y="243" fill="#2563eb">40</text>
+                
+                <text x="440" y="292">Time</text>
+              </g>
+              {envSeries.map((series) => {
+                const isTemp = series.key === 'temperature'
+                const min = isTemp ? 25 : 40
+                const max = isTemp ? 35 : 100
+                const pointsStr = series.points.map(p => `${p.x},${getMappedY(p.value, min, max)}`).join(' ')
+                
+                return (
+                  <g key={series.key}>
+                    <polyline className="line" points={pointsStr} style={{ stroke: series.color }} />
+                    {series.points.map((point) => (
+                      <circle
+                        className="point"
+                        cx={point.x}
+                        cy={getMappedY(point.value, min, max)}
+                        fill={series.color}
+                        key={`${series.key}-${point.time}`}
+                        r="5"
+                        onMouseEnter={() =>
+                          setHoveredPoint({
+                            ...point,
+                            color: series.color,
+                            label: series.label,
+                            unit: series.unit,
+                            mappedY: getMappedY(point.value, min, max)
+                          })
+                        }
+                        onMouseLeave={() => setHoveredPoint(null)}
+                      />
+                    ))}
+                  </g>
+                )
+              })}
+              {hoveredPoint && (hoveredPoint.label === 'Temperature' || hoveredPoint.label === 'Humidity') && (
+                <g className="chart-tooltip" transform={`translate(${Math.min(hoveredPoint.x + 14, 770)} ${Math.max(hoveredPoint.mappedY - 62, 30)})`}>
+                  <rect width="172" height="58" rx="8" />
+                  <circle cx="15" cy="20" r="5" fill={hoveredPoint.color} />
+                  <text x="28" y="24">{hoveredPoint.label}: {hoveredPoint.value}{hoveredPoint.unit ? ` ${hoveredPoint.unit}` : ''}</text>
+                  <text x="15" y="44">Time: {hoveredPoint.time}</text>
+                </g>
+              )}
+            </svg>
+          </div>
+
+          {/* Chart 2: Smoke Level */}
+          <div className="chart-card" style={{ padding: 0, border: 'none' }}>
+            <div className="chart-title">
+              <BarChart3 size={18} aria-hidden="true" />
+              Safety (Smoke Level)
+            </div>
+            <svg className="timeline-chart" viewBox="0 0 960 300" role="img" aria-label="Smoke chart">
+              <g className="grid-lines">
+                {[60, 105, 150, 195, 240].map((y) => (
+                  <line key={`h-${y}`} x1="58" x2="925" y1={y} y2={y} />
+                ))}
+                {[140, 260, 380, 500, 620, 740, 860].map((x) => (
+                  <line key={`v-${x}`} x1={x} x2={x} y1="45" y2="255" />
+                ))}
+              </g>
+              <g className="axis-labels">
+                {/* Smoke Axis (Left) */}
+                <text x="28" y="63" fill="#64748b">50</text>
+                <text x="28" y="108" fill="#64748b">37.5</text>
+                <text x="28" y="153" fill="#64748b">25</text>
+                <text x="28" y="198" fill="#64748b">12.5</text>
+                <text x="28" y="243" fill="#64748b">0</text>
+                
+                <text x="440" y="292">Time</text>
+              </g>
+              {smokeSeries.map((series) => {
+                const min = 0
+                const max = 50
+                const pointsStr = series.points.map(p => `${p.x},${getMappedY(p.value, min, max)}`).join(' ')
+                
+                return (
+                  <g key={series.key}>
+                    <polyline className="line" points={pointsStr} style={{ stroke: series.color }} />
+                    {series.points.map((point) => (
+                      <circle
+                        className="point"
+                        cx={point.x}
+                        cy={getMappedY(point.value, min, max)}
+                        fill={series.color}
+                        key={`${series.key}-${point.time}`}
+                        r="5"
+                        onMouseEnter={() =>
+                          setHoveredPoint({
+                            ...point,
+                            color: series.color,
+                            label: series.label,
+                            unit: series.unit,
+                            mappedY: getMappedY(point.value, min, max)
+                          })
+                        }
+                        onMouseLeave={() => setHoveredPoint(null)}
+                      />
+                    ))}
+                  </g>
+                )
+              })}
+              {hoveredPoint && hoveredPoint.label === 'Smoke' && (
+                <g className="chart-tooltip" transform={`translate(${Math.min(hoveredPoint.x + 14, 770)} ${Math.max(hoveredPoint.mappedY - 62, 30)})`}>
+                  <rect width="172" height="58" rx="8" />
+                  <circle cx="15" cy="20" r="5" fill={hoveredPoint.color} />
+                  <text x="28" y="24">{hoveredPoint.label}: {hoveredPoint.value}{hoveredPoint.unit ? ` ${hoveredPoint.unit}` : ''}</text>
+                  <text x="15" y="44">Time: {hoveredPoint.time}</text>
+                </g>
+              )}
+            </svg>
+          </div>
         </div>
 
         <div className="mock-table-wrap">
@@ -128,9 +212,6 @@ function SensorTimeline() {
                 <th>Temperature</th>
                 <th>Humidity</th>
                 <th>Smoke</th>
-                <th>LED</th>
-                <th>Servo</th>
-                <th>Buzzer</th>
               </tr>
             </thead>
             <tbody>
@@ -140,9 +221,6 @@ function SensorTimeline() {
                   <td>{row.temperature}</td>
                   <td>{row.humidity}</td>
                   <td>{row.smoke}</td>
-                  <td>{row.led}</td>
-                  <td>{row.servo}</td>
-                  <td>{row.buzzer}</td>
                 </tr>
               ))}
             </tbody>
