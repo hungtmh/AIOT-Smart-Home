@@ -50,6 +50,8 @@ public class RealtimeHub {
 
   public void broadcastFireAlert(FireAlertResponse alert) {
     broadcast("FIRE_ALERT", alert);
+  public void broadcastAlert(Object alert) {
+    broadcast("ALERT", alert);
   }
 
   private void broadcast(String type, Object data) {

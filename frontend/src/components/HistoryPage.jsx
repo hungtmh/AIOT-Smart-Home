@@ -125,7 +125,7 @@ function HistoryPage({ activeTab, onTabChange }) {
         <div className="history-table-title">
           <div>
             <BarChart3 size={20} aria-hidden="true" />
-            <h2>{historyPage?.title ?? 'Loading...'}</h2>
+            <h2>{loading ? 'Loading...' : (historyPage?.title ?? 'Data Unavailable')}</h2>
           </div>
           <span>{pageText}</span>
         </div>

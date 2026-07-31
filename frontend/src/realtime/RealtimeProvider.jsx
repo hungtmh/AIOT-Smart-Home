@@ -49,6 +49,11 @@ export function RealtimeProvider({ session, children }) {
   const [fireAlert, setFireAlert] = useState(null);
   const [connectionState, setConnectionState] = useState("connecting");
   const [error, setError] = useState("");
+  const [deviceStates, setDeviceStates] = useState([]);
+  const [telemetry, setTelemetry] = useState(null);
+  const [connectionState, setConnectionState] = useState("connecting");
+  const [error, setError] = useState("");
+  const [fireAlert, setFireAlert] = useState(null);
 
   const updateDeviceState = useCallback((nextState) => {
     setDeviceStates((currentStates) =>
@@ -116,7 +121,7 @@ export function RealtimeProvider({ session, children }) {
           updateDeviceState(message.data);
         } else if (message.type === "TELEMETRY" && message.data) {
           setTelemetry(message.data);
-        } else if (message.type === "FIRE_ALERT" && message.data) {
+        } else if (message.type === "ALERT" && message.data) {
           setFireAlert(message.data);
         } else if (message.type === "AUTH_ERROR") {
           allowReconnect = false;
@@ -152,17 +157,17 @@ export function RealtimeProvider({ session, children }) {
     () => ({
       deviceStates,
       telemetry,
-      fireAlert,
       connectionState,
       error,
+      fireAlert,
       updateDeviceState,
     }),
     [
       connectionState,
       deviceStates,
       error,
-      telemetry,
       fireAlert,
+      telemetry,
       updateDeviceState,
     ],
   );
