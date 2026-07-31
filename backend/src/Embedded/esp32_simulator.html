@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESP32 Web Hardware Simulator – AIOT Smart Home</title>
+  <meta name="description" content="Mô phỏng phần cứng thực tế ESP32 và các linh kiện trong Embedded.ino kết nối trực tiếp với MQTT HiveMQ Cloud." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- MQTT.js over CDN -->
+  <script src="https://unpkg.com/mqtt@5.10.4/dist/mqtt.min.js"></script>
+
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM & TOKENS
+       ========================================================================== */
+    :root {
+      --bg-dark: #070913;
+      --bg-card: #0f172a;
+      --bg-card-hover: #1e293b;
+      --bg-panel: rgba(15, 23, 42, 0.75);
+      --border: #1e293b;
+      --border-light: #334155;
+      --border-accent: #38bdf8;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --cyan: #38bdf8;
+      --cyan-glow: rgba(56, 189, 248, 0.25);
+      --green: #22c55e;
+      --green-glow: rgba(34, 197, 94, 0.25);
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.25);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.25);
+      --purple: #c084fc;
+      --purple-glow: rgba(192, 132, 252, 0.25);
+
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-lg: 16px;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.08) 0px, transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ==========================================================================
+       HEADER & NAVIGATION
+       ========================================================================== */
+    .app-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(7, 9, 19, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+
+    .brand {
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: #fff;
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .brand-title h1 {
+      font-size: 17px; font-weight: 800;
+      background: linear-gradient(90deg, #f8fafc, #38bdf8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .brand-title p {
+      font-size: 11px; color: var(--text-muted); font-weight: 500;
+    }
+
+    .nav-tabs {
+      display: flex; gap: 6px;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 4px; border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      padding: 8px 16px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      background: transparent; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      transition: var(--transition);
+    }
+
+    .tab-btn:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+    .tab-btn.active {
+      color: #fff; background: var(--cyan);
+      box-shadow: 0 0 12px var(--cyan-glow);
+    }
+
+    .conn-status {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.9);
+      transition: var(--transition);
+    }
+
+    .conn-status.connected { color: var(--green); border-color: rgba(34,197,94,0.3); background: var(--green-glow); }
+    .conn-status.disconnected { color: var(--red); border-color: rgba(239,68,68,0.3); background: var(--red-glow); }
+    .conn-status.connecting { color: var(--amber); border-color: rgba(245,158,11,0.3); background: var(--amber-glow); animation: pulse 1.5s infinite; }
+
+    .conn-status .indicator {
+      width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+    }
+
+    /* ==========================================================================
+       MAIN CONTAINER
+       ========================================================================== */
+    .container {
+      max-width: 1440px; margin: 0 auto; padding: 20px;
+    }
+
+    .view-panel { display: none; }
+    .view-panel.active { display: block; }
+
+    /* ==========================================================================
+       VIEW 1: HARDWARE CIRCUIT BOARD VISUALIZER
+       ========================================================================== */
+    .circuit-workspace {
+      display: grid; grid-template-columns: 320px 1fr 340px; gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 1200px) {
+      .circuit-workspace { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+      color: var(--text-main);
+    }
+
+    /* ESP32 Board Central Graphic */
+    .esp32-central-board {
+      background: #022c22;
+      border: 2px solid #059669;
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      box-shadow: 0 0 30px rgba(5, 150, 105, 0.15);
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+
+    .esp32-chip {
+      width: 120px; height: 120px; background: #0f172a;
+      border: 2px solid #334155; border-radius: 8px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    .esp32-chip::after {
+      content: 'ESP32-S3 WROOM'; font-size: 9px; font-family: var(--font-mono);
+      color: #94a3b8; margin-top: 4px; font-weight: 700;
+    }
+
+    .chip-notch {
+      width: 16px; height: 6px; background: #334155;
+      border-radius: 0 0 4px 4px; position: absolute; top: 0;
+    }
+
+    .pin-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px;
+      width: 100%;
+    }
+
+    .pin-badge {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 10px; background: rgba(15, 23, 42, 0.8);
+      border-radius: var(--radius-sm); border: 1px solid rgba(52, 211, 153, 0.3);
+      font-size: 11px; font-family: var(--font-mono); color: #6ee7b7;
+    }
+
+    .pin-badge .pin-no { font-weight: 700; color: var(--cyan); }
+    .pin-badge.active { border-color: var(--cyan); background: var(--cyan-glow); }
+
+    /* Component Module Cards */
+    .modules-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;
+    }
+
+    .hardware-module {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .hardware-module:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+
+    .module-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .module-name {
+      font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+    }
+
+    .gpio-tag {
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 12px; background: rgba(56, 189, 248, 0.15);
+      color: var(--cyan); border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    /* Servo Angle Gauge */
+    .servo-visualizer {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      padding: 12px; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm);
+    }
+
+    .servo-gauge {
+      width: 140px; height: 75px; position: relative;
+      overflow: hidden; display: flex; justify-content: center;
+    }
+
+    .gauge-bg {
+      width: 140px; height: 140px; border-radius: 50%;
+      border: 10px solid #1e293b; border-bottom-color: transparent; border-left-color: transparent;
+      transform: rotate(-135deg); position: absolute; top: 0;
+    }
+
+    .gauge-arm {
+      width: 4px; height: 60px; background: var(--cyan);
+      position: absolute; bottom: 0; transform-origin: bottom center;
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-radius: 4px; box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .gauge-arm::after {
+      content: ''; width: 14px; height: 14px; background: #fff;
+      border-radius: 50%; position: absolute; bottom: -5px; left: -5px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .servo-status-text {
+      font-size: 16px; font-weight: 800; font-family: var(--font-mono);
+      color: var(--cyan);
+    }
+
+    .angle-bounds {
+      display: flex; justify-content: space-between; width: 100%;
+      font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);
+    }
+
+    /* LED Glow Visualizer */
+    .led-bulb-container {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px; gap: 12px;
+    }
+
+    .led-bulb {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: #1e293b; border: 3px solid #334155;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; transition: var(--transition);
+    }
+
+    .led-bulb.active {
+      background: #fef08a; border-color: #facc15;
+      box-shadow: 0 0 35px #facc15, inset 0 0 15px #eab308;
+      color: #713f12; animation: glowPulse 2s infinite ease-in-out;
+    }
+
+    /* Buzzer Wave Visualizer */
+    .buzzer-visualizer {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      height: 70px;
+    }
+
+    .sound-wave {
+      width: 6px; height: 15px; background: #334155; border-radius: 3px;
+      transition: var(--transition);
+    }
+
+    .buzzer-visualizer.active .sound-wave {
+      background: var(--red); box-shadow: 0 0 10px var(--red-glow);
+      animation: wavePulse 0.4s infinite alternate;
+    }
+
+    .buzzer-visualizer.active .sound-wave:nth-child(2) { animation-delay: 0.1s; }
+    .buzzer-visualizer.active .sound-wave:nth-child(3) { animation-delay: 0.2s; }
+    .buzzer-visualizer.active .sound-wave:nth-child(4) { animation-delay: 0.3s; }
+
+    /* Microphone Voice Trigger Panel */
+    .voice-commands-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
+    }
+
+    .btn-voice {
+      padding: 10px; border-radius: var(--radius-sm);
+      background: rgba(192, 132, 252, 0.1); border: 1px solid rgba(192, 132, 252, 0.3);
+      color: var(--purple); font-size: 12px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: var(--transition); text-align: left;
+    }
+
+    .btn-voice:hover {
+      background: var(--purple); color: #fff; box-shadow: 0 0 12px var(--purple-glow);
+    }
+
+    /* Sliders & Controls */
+    .sensor-row {
+      margin-bottom: 14px;
+    }
+
+    .sensor-label {
+      display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;
+      margin-bottom: 6px; color: var(--text-muted);
+    }
+
+    .sensor-value { font-family: var(--font-mono); color: var(--text-main); font-weight: 700; }
+
+    input[type="range"] {
+      width: 100%; height: 6px; background: #1e293b; border-radius: 3px;
+      appearance: none; outline: none; cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--cyan); cursor: pointer; box-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    /* Smoke Canvas Particles */
+    #smokeCanvas {
+      width: 100%; height: 60px; border-radius: var(--radius-sm);
+      background: #090d16; margin-top: 8px; border: 1px solid var(--border);
+    }
+
+    /* ==========================================================================
+       SERIAL LOG CONSOLE
+       ========================================================================== */
+    .log-console {
+      background: #020617; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px;
+      font-family: var(--font-mono); font-size: 12px;
+      height: 320px; overflow-y: auto; color: #38bdf8;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+    }
+
+    .log-entry { margin-bottom: 4px; line-height: 1.4; word-break: break-all; }
+    .log-time { color: #64748b; margin-right: 8px; font-size: 11px; }
+    .log-entry.pub { color: #4ade80; }
+    .log-entry.sub { color: #38bdf8; }
+    .log-entry.alert { color: #f87171; font-weight: 700; }
+    .log-entry.voice { color: #c084fc; font-weight: 700; }
+    .log-entry.system { color: #fbbf24; }
+
+    /* Keyframes */
+    @keyframes wavePulse {
+      0% { height: 10px; }
+      100% { height: 40px; }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 25px #facc15; }
+      50% { box-shadow: 0 0 45px #facc15; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .btn-action {
+      width: 100%; padding: 10px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 700; border: none; cursor: pointer;
+      transition: var(--transition); background: var(--border-light); color: #fff;
+    }
+
+    .btn-action:hover { background: var(--cyan); color: #000; }
+    .btn-action.active { background: var(--red); color: #fff; }
+
+    .auto-reset-badge {
+      font-size: 10px; font-family: var(--font-mono); color: var(--amber);
+      background: var(--amber-glow); padding: 2px 6px; border-radius: 4px;
+      display: inline-block; margin-top: 4px;
+    }
+
+    /* Smoke Alert Flasher */
+    .alert-banner {
+      background: var(--red-glow); border: 1px solid var(--red);
+      color: #f87171; padding: 12px 16px; border-radius: var(--radius);
+      display: none; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; animation: pulse 1s infinite;
+    }
+
+    .alert-banner.show { display: flex; }
+
+    /* Form Inputs */
+    .input-field {
+      width: 100%; padding: 8px 12px; background: #090d16;
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: #fff; font-family: var(--font-mono); font-size: 12px;
+      margin-top: 4px; margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================================================
+       HEADER
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-title">
+        <h1>ESP32 Hardware Web Visualizer</h1>
+        <p>Mô phỏng sơ đồ mạch phần cứng thực tế từ Embedded.ino</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchView('circuit')">
+        🔌 Sơ Đồ Phần Cứng
+      </button>
+      <button class="tab-btn" onclick="switchView('controls')">
+        🎛️ Bảng Cảm Biến
+      </button>
+      <button class="tab-btn" onclick="switchView('logs')">
+        📋 Serial Monitor
+      </button>
+    </div>
+
+    <!-- MQTT Connection Badge -->
+    <div id="connStatus" class="conn-status disconnected">
+      <span class="indicator"></span>
+      <span id="connText">MQTT Disconnected</span>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       MAIN CONTAINER
+       ========================================================================== -->
+  <div class="container">
+
+    <!-- ALERT BANNER -->
+    <div id="alertBanner" class="alert-banner">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:20px;">🔥</span>
+        <div>
+          <strong id="alertTitle">SMOKE_HIGH ALERT!</strong>
+          <div id="alertDesc" style="font-size:11px; opacity:0.9;">Nồng độ khói vượt ngưỡng an toàn!</div>
+        </div>
+      </div>
+      <span style="font-size:12px; font-weight:700;" id="alertPpm">85 PPM</span>
+    </div>
+
+    <!-- ==========================================================================
+         VIEW 1: HARDWARE CIRCUIT BOARD VISUALIZER
+         ========================================================================== -->
+    <div id="viewCircuit" class="view-panel active">
+      <div class="circuit-workspace">
+
+        <!-- LEFT SIDEBAR: MQTT CONFIG & SUMMARY -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <!-- MQTT Broker Config -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🌐 MQTT HiveMQ Cloud</div>
+            </div>
+            <label style="font-size:11px; color:var(--text-muted);">Broker Host</label>
+            <input id="mqttHost" class="input-field" value="b66733af03914cf1a45702ed5b2f999d.s1.eu.hivemq.cloud" />
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+              <div>
+                <label style="font-size:11px; color:var(--text-muted);">WSS Port</label>
+                <input id="mqttPort" class="input-field" value="8884" type="number" />
+              </div>
+              <div>
+                <label style="font-size:11px; color:var(--text-muted);">Client ID</label>
+                <input id="mqttClientId" class="input-field" value="esp32-visualizer-web" />
+              </div>
+            </div>
+
+            <button id="btnToggleConn" class="btn-action" onclick="toggleMqttConnection()">
+              ⚡ Connect to HiveMQ
+            </button>
+          </div>
+
+          <!-- FreeRTOS Core & Firmware Status -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🧠 ESP32 FreeRTOS Firmware</div>
+            </div>
+            <div style="font-size:12px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;">
+                <span style="color:var(--text-muted);">Core 0 Task:</span>
+                <span style="font-family:var(--font-mono); color:var(--cyan);">AudioTask (I2S)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;">
+                <span style="color:var(--text-muted);">Core 1 Task:</span>
+                <span style="font-family:var(--font-mono); color:var(--purple);">InferTask (Speech)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-muted);">Auto-Reset Timers:</span>
+                <span style="font-family:var(--font-mono); color:var(--amber);">Servo 30s / Pump 60s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER: VISUAL MODULES GRID -->
+        <div class="modules-grid">
+
+          <!-- 1. SERVO SG90 #1 (MAIN DOOR) -->
+          <div class="hardware-module">
+            <div class="module-top">
+              <div class="module-name">🚪 Servo SG90 #1 (Cửa Chính)</div>
+              <span class="gpio-tag">GPIO 18</span>
+            </div>
+            <div class="servo-visualizer">
+              <div class="servo-gauge">
+                <div class="gauge-bg"></div>
+                <div id="doorServoArm" class="gauge-arm" style="transform: rotate(-45deg);"></div>
+              </div>
+              <div class="angle-bounds">
+                <span>90° (CLOSE)</span>
+                <span>150° (OPEN)</span>
+              </div>
+              <div id="doorServoText" class="servo-status-text">Góc: 90° [ĐÓNG]</div>
+              <div id="doorServoTimer" class="auto-reset-badge" style="display:none;">Auto Close: 30s</div>
+            </div>
+          </div>
+
+          <!-- 2. SERVO SG90 #2 (WINDOW / PUMP MOCK) -->
+          <div class="hardware-module">
+            <div class="module-top">
+              <div class="module-name">🪟 Servo SG90 #2 (Cửa Sổ / Pump)</div>
+              <span class="gpio-tag">GPIO 19</span>
+            </div>
+            <div class="servo-visualizer">
+              <div class="servo-gauge">
+                <div class="gauge-bg"></div>
+                <div id="windowServoArm" class="gauge-arm" style="transform: rotate(-135deg);"></div>
+              </div>
+              <div class="angle-bounds">
+                <span>0° (CLOSE)</span>
+                <span>90° (OPEN)</span>
+              </div>
+              <div id="windowServoText" class="servo-status-text" style="color:var(--purple);">Góc: 0° [ĐÓNG]</div>
+              <div id="windowServoTimer" class="auto-reset-badge" style="display:none;">Auto Off: 60s</div>
+            </div>
+          </div>
+
+          <!-- 3. LED LIGHT MODULE -->
+          <div class="hardware-module">
+            <div class="module-top">
+              <div class="module-name">💡 LED Light (Đèn Phòng)</div>
+              <span class="gpio-tag">GPIO 2</span>
+            </div>
+            <div class="led-bulb-container">
+              <div id="ledBulb" class="led-bulb">💡</div>
+              <div id="ledStatusText" style="font-weight:700; font-size:13px; color:var(--text-muted);">Trạng Thái: OFF</div>
+            </div>
+          </div>
+
+          <!-- 4. ACTIVE BUZZER MODULE -->
+          <div class="hardware-module">
+            <div class="module-top">
+              <div class="module-name">🔔 Active Buzzer (Báo Động)</div>
+              <span class="gpio-tag">GPIO 21</span>
+            </div>
+            <div class="servo-visualizer">
+              <div id="buzzerWaves" class="buzzer-visualizer">
+                <div class="sound-wave"></div>
+                <div class="sound-wave"></div>
+                <div class="sound-wave"></div>
+                <div class="sound-wave"></div>
+              </div>
+              <div id="buzzerStatusText" style="font-weight:700; font-size:13px; color:var(--text-muted);">Âm Thanh: OFF</div>
+            </div>
+          </div>
+
+          <!-- 5. INMP441 MICROPHONE (VOICE CONTROL) -->
+          <div class="hardware-module" style="grid-column: span 2;">
+            <div class="module-top">
+              <div class="module-name">🎙️ INMP441 Microphone (Nhận Dạng Giọng Nói)</div>
+              <span class="gpio-tag">WS: 25 | SCK: 26 | SD: 32</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+              Mô phỏng mô hình Edge Impulse classifier chạy trên FreeRTOS Core 1:
+            </div>
+            <div class="voice-commands-grid">
+              <button class="btn-voice" onclick="triggerVoiceCommand(1)">🗣️ "Mở cửa" (Servo 150°)</button>
+              <button class="btn-voice" onclick="triggerVoiceCommand(2)">🗣️ "Đóng cửa" (Servo 90°)</button>
+              <button class="btn-voice" onclick="triggerVoiceCommand(3)">🗣️ "Mở đèn" (LED ON)</button>
+              <button class="btn-voice" onclick="triggerVoiceCommand(4)">🗣️ "Tắt đèn" (LED OFF)</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT SIDEBAR: SENSORS QUICK VIEW -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- DHT11 Module -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🌡️ Cảm Biến DHT11</div>
+              <span class="gpio-tag">GPIO 15</span>
+            </div>
+            
+            <div class="sensor-row">
+              <div class="sensor-label">
+                <span>Nhiệt độ</span>
+                <span id="txtTemp" class="sensor-value">28.5 °C</span>
+              </div>
+              <input type="range" id="sliderTemp" min="10" max="50" step="0.5" value="28.5" oninput="onSensorChange()" />
+            </div>
+
+            <div class="sensor-row">
+              <div class="sensor-label">
+                <span>Độ ẩm</span>
+                <span id="txtHum" class="sensor-value">65 %</span>
+              </div>
+              <input type="range" id="sliderHum" min="20" max="95" step="1" value="65" oninput="onSensorChange()" />
+            </div>
+          </div>
+
+          <!-- MQ-2 Module -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💨 Cảm Biến Khói MQ-2</div>
+              <span class="gpio-tag">GPIO 34 (AO)</span>
+            </div>
+            
+            <div class="sensor-row">
+              <div class="sensor-label">
+                <span>Nồng độ khói</span>
+                <span id="txtSmoke" class="sensor-value">15 PPM</span>
+              </div>
+              <input type="range" id="sliderSmoke" min="0" max="100" step="1" value="15" oninput="onSensorChange()" />
+            </div>
+
+            <label style="font-size:11px; color:var(--text-muted);">Ngưỡng Cảnh Báo (Threshold)</label>
+            <input type="number" id="numThreshold" class="input-field" value="70" onchange="onThresholdChange()" />
+
+            <canvas id="smokeCanvas"></canvas>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         VIEW 2: SENSOR & CONTROL DASHBOARD
+         ========================================================================== -->
+    <div id="viewControls" class="view-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎛️ Bảng Điều Khiển Giả Lập Cảm Biến & Thiết Bị</div>
+        </div>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+          Tất cả dữ liệu từ trang này sẽ được đồng bộ trực tiếp với MQTT HiveMQ Cloud topic 
+          <code style="color:var(--cyan);">aiot/esp32-s3/telemetry</code> và các topic phản hồi trạng thái.
+        </p>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+          <div>
+            <h3 style="font-size:14px; margin-bottom:12px; color:var(--cyan);">Điều Khiển Thiết Bị</h3>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <button id="btnToggleServo" class="btn-action" onclick="toggleDevice('servo')">🚪 Cửa Chính (Servo 1)</button>
+              <button id="btnTogglePump" class="btn-action" onclick="toggleDevice('pump')">🪟 Cửa Sổ (Servo 2)</button>
+              <button id="btnToggleLed" class="btn-action" onclick="toggleDevice('led')">💡 Đèn Phòng (LED)</button>
+              <button id="btnToggleBuzzer" class="btn-action" onclick="toggleDevice('buzzer')">🔔 Còi Báo Động (Buzzer)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         VIEW 3: SERIAL MONITOR & MQTT DEBUGGER
+         ========================================================================== -->
+    <div id="viewLogs" class="view-panel">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 ESP32 Serial Monitor & Log Debugger</div>
+          <button class="btn-action" style="width:auto; padding:4px 12px;" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        <div id="logConsole" class="log-console">
+          <div class="log-entry system"><span class="log-time">[00:00:00]</span>=== AIOT Smart Home - ESP32 Firmware Simulator Ready ===</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==========================================================================
+       JAVASCRIPT LOGIC
+       ========================================================================== -->
+  <script>
+    // =========================================================================
+    //  STATE & CONSTANTS MATCHING Embedded.ino
+    // =========================================================================
+    const TOPICS = {
+      LED_CMD:       'aiot/esp32-s3/device/led/set',
+      SERVO_CMD:     'aiot/esp32-s3/device/servo/set',
+      BUZZER_CMD:    'aiot/esp32-s3/device/buzzer/set',
+      PUMP_CMD:      'aiot/esp32-s3/device/pump/set',
+      MQ2_THRESHOLD: 'aiot/esp32-s3/device/mq2/threshold/set',
+
+      LED_STATE:     'aiot/esp32-s3/device/led/state',
+      SERVO_STATE:   'aiot/esp32-s3/device/servo/state',
+      BUZZER_STATE:  'aiot/esp32-s3/device/buzzer/state',
+      PUMP_STATE:    'aiot/esp32-s3/device/pump/state',
+      MQ2_THRESHOLD_STATE: 'aiot/esp32-s3/device/mq2/threshold/state',
+
+      TELEMETRY:     'aiot/esp32-s3/telemetry',
+      MQ2_ALERT:     'aiot/esp32-s3/alert/smoke'
+    };
+
+    let mqttClient = null;
+
+    // Device States
+    let ledState = false;
+    let servoState = false;  // Door Servo 1
+    let buzzerState = false;
+    let pumpState = false;    // Window Servo 2
+
+    // Timers
+    let servoOnTimestamp = 0;
+    let pumpOnTimestamp = 0;
+    const SERVO_AUTO_CLOSE_MS = 30000;
+    const PUMP_AUTO_OFF_MS = 60000;
+
+    // MQ2 Threshold & Alert
+    let mq2Threshold = 70;
+    let lastAlertMs = 0;
+    const ALERT_COOLDOWN_MS = 10000;
+
+    // Telemetry
+    let telemetryIntervalId = null;
+
+    // Web Audio API for Buzzer
+    let audioCtx = null;
+    let buzzerOsc = null;
+
+    // =========================================================================
+    //  TAB NAVIGATION
+    // =========================================================================
+    function switchView(viewName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
+
+      if (viewName === 'circuit') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        document.getElementById('viewCircuit').classList.add('active');
+      } else if (viewName === 'controls') {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        document.getElementById('viewControls').classList.add('active');
+      } else if (viewName === 'logs') {
+        document.querySelectorAll('.tab-btn')[2].classList.add('active');
+        document.getElementById('viewLogs').classList.add('active');
+      }
+    }
+
+    // =========================================================================
+    //  MQTT CONNECTION
+    // =========================================================================
+    function toggleMqttConnection() {
+      if (mqttClient && mqttClient.connected) {
+        mqttClient.end();
+        return;
+      }
+
+      const host = document.getElementById('mqttHost').value.trim();
+      const port = document.getElementById('mqttPort').value.trim();
+      const clientId = document.getElementById('mqttClientId').value.trim();
+
+      const brokerUrl = `wss://${host}:${port}/mqtt`;
+
+      updateConnStatus('connecting', 'Connecting...');
+      addLog('system', `Connecting to HiveMQ Cloud: ${brokerUrl}`);
+
+      mqttClient = mqtt.connect(brokerUrl, {
+        clientId: clientId + '_' + Math.random().toString(16).substring(2, 8),
+        username: 'aiot_esp32',
+        password: 'Aiot@123456',
+        protocol: 'wss',
+        reconnectPeriod: 3000
+      });
+
+      mqttClient.on('connect', () => {
+        updateConnStatus('connected', 'MQTT Connected');
+        addLog('system', '[MQTT] Connected successfully to HiveMQ Cloud TLS');
+
+        // Subscribe command topics
+        [TOPICS.LED_CMD, TOPICS.SERVO_CMD, TOPICS.BUZZER_CMD, TOPICS.PUMP_CMD, TOPICS.MQ2_THRESHOLD].forEach(t => {
+          mqttClient.subscribe(t, { qos: 1 });
+          addLog('sub', `[SUB] ${t}`);
+        });
+
+        // Publish initial states
+        publishAllStates();
+        startTelemetryLoop();
+      });
+
+      mqttClient.on('message', (topic, payload) => {
+        const msg = payload.toString().trim();
+        addLog('sub', `[RECV] ${topic} -> ${msg}`);
+
+        if (topic === TOPICS.LED_CMD) setLed(parseBool(msg));
+        else if (topic === TOPICS.SERVO_CMD) setServo(parseBool(msg));
+        else if (topic === TOPICS.BUZZER_CMD) setBuzzer(parseBool(msg));
+        else if (topic === TOPICS.PUMP_CMD) setPump(parseBool(msg));
+        else if (topic === TOPICS.MQ2_THRESHOLD) {
+          const val = parseInt(msg);
+          if (!isNaN(val)) {
+            mq2Threshold = val;
+            document.getElementById('numThreshold').value = val;
+            addLog('system', `[MQ-2] Threshold updated to ${val} PPM`);
+            publishState(TOPICS.MQ2_THRESHOLD_STATE, String(val));
+          }
+        }
+      });
+
+      mqttClient.on('error', (err) => {
+        updateConnStatus('disconnected', 'MQTT Error');
+        addLog('alert', `[MQTT] Error: ${err.message}`);
+      });
+
+      mqttClient.on('close', () => {
+        updateConnStatus('disconnected', 'MQTT Disconnected');
+        addLog('system', '[MQTT] Connection closed.');
+      });
+    }
+
+    function updateConnStatus(statusClass, text) {
+      const el = document.getElementById('connStatus');
+      el.className = `conn-status ${statusClass}`;
+      document.getElementById('connText').textContent = text;
+
+      const btn = document.getElementById('btnToggleConn');
+      if (statusClass === 'connected') {
+        btn.textContent = '⏹ Disconnect';
+        btn.classList.add('active');
+      } else {
+        btn.textContent = '⚡ Connect to HiveMQ';
+        btn.classList.remove('active');
+      }
+    }
+
+    function parseBool(msg) {
+      const u = msg.toUpperCase();
+      return (u === 'ON' || u === '1' || u === 'TRUE' || u === 'OPEN');
+    }
+
+    function publishState(topic, valStr) {
+      if (mqttClient && mqttClient.connected) {
+        mqttClient.publish(topic, valStr, { retain: true });
+        addLog('pub', `[PUB] ${topic} = ${valStr}`);
+      }
+    }
+
+    function publishAllStates() {
+      publishState(TOPICS.LED_STATE, ledState ? "ON" : "OFF");
+      publishState(TOPICS.SERVO_STATE, servoState ? "OPEN" : "CLOSE");
+      publishState(TOPICS.BUZZER_STATE, buzzerState ? "ON" : "OFF");
+      publishState(TOPICS.PUMP_STATE, pumpState ? "ON" : "OFF");
+      publishState(TOPICS.MQ2_THRESHOLD_STATE, String(mq2Threshold));
+    }
+
+    // =========================================================================
+    //  DEVICE CONTROLS & VISUAL UPDATES
+    // =========================================================================
+
+    // 1. Door Servo (GPIO 18): Closed = 90 deg, Open = 150 deg
+    function setServo(enabled) {
+      servoState = enabled;
+      const angle = enabled ? 150 : 90;
+      
+      // Rotate visual arm: 90 deg -> -45deg rotate, 150 deg -> +45deg rotate
+      const rotateDeg = -135 + ((angle / 180) * 180);
+      document.getElementById('doorServoArm').style.transform = `rotate(${rotateDeg}deg)`;
+      
+      const txt = document.getElementById('doorServoText');
+      txt.textContent = `Góc: ${angle}° [${enabled ? 'MỞ' : 'ĐÓNG'}]`;
+      txt.style.color = enabled ? 'var(--green)' : 'var(--cyan)';
+
+      servoOnTimestamp = enabled ? Date.now() : 0;
+      document.getElementById('doorServoTimer').style.display = enabled ? 'inline-block' : 'none';
+
+      addLog('system', `[SERVO 1] ${enabled ? 'OPEN (150°)' : 'CLOSE (90°)'}`);
+      publishState(TOPICS.SERVO_STATE, enabled ? "OPEN" : "CLOSE");
+    }
+
+    // 2. Window Servo / Pump (GPIO 19): Closed = 0 deg, Open = 90 deg
+    function setPump(enabled) {
+      pumpState = enabled;
+      const angle = enabled ? 90 : 0;
+
+      const rotateDeg = -135 + ((angle / 180) * 180);
+      document.getElementById('windowServoArm').style.transform = `rotate(${rotateDeg}deg)`;
+      
+      const txt = document.getElementById('windowServoText');
+      txt.textContent = `Góc: ${angle}° [${enabled ? 'MỞ' : 'ĐÓNG'}]`;
+      txt.style.color = enabled ? 'var(--green)' : 'var(--purple)';
+
+      pumpOnTimestamp = enabled ? Date.now() : 0;
+      document.getElementById('windowServoTimer').style.display = enabled ? 'inline-block' : 'none';
+
+      addLog('system', `[PUMP -> SERVO 2] ${enabled ? 'OPEN (90°)' : 'CLOSE (0°)'}`);
+      publishState(TOPICS.PUMP_STATE, enabled ? "ON" : "OFF");
+    }
+
+    // 3. LED Light (GPIO 2)
+    function setLed(enabled) {
+      ledState = enabled;
+      const bulb = document.getElementById('ledBulb');
+      const txt = document.getElementById('ledStatusText');
+
+      if (enabled) {
+        bulb.classList.add('active');
+        txt.textContent = 'Trạng Thái: ON (ĐANG BẬT)';
+        txt.style.color = 'var(--amber)';
+      } else {
+        bulb.classList.remove('active');
+        txt.textContent = 'Trạng Thái: OFF';
+        txt.style.color = 'var(--text-muted)';
+      }
+
+      addLog('system', `[LED] ${enabled ? 'ON' : 'OFF'}`);
+      publishState(TOPICS.LED_STATE, enabled ? "ON" : "OFF");
+    }
+
+    // 4. Buzzer (GPIO 21)
+    function setBuzzer(enabled) {
+      buzzerState = enabled;
+      const waves = document.getElementById('buzzerWaves');
+      const txt = document.getElementById('buzzerStatusText');
+
+      if (enabled) {
+        waves.classList.add('active');
+        txt.textContent = 'Âm Thanh: ON (Kêu Cảnh Báo)';
+        txt.style.color = 'var(--red)';
+        playBuzzerSound(true);
+      } else {
+        waves.classList.remove('active');
+        txt.textContent = 'Âm Thanh: OFF';
+        txt.style.color = 'var(--text-muted)';
+        playBuzzerSound(false);
+      }
+
+      addLog('system', `[BUZZER] ${enabled ? 'ON' : 'OFF'}`);
+      publishState(TOPICS.BUZZER_STATE, enabled ? "ON" : "OFF");
+    }
+
+    function toggleDevice(type) {
+      if (type === 'servo') setServo(!servoState);
+      else if (type === 'pump') setPump(!pumpState);
+      else if (type === 'led') setLed(!ledState);
+      else if (type === 'buzzer') setBuzzer(!buzzerState);
+    }
+
+    // Voice Command Dispatch (FreeRTOS Core 1 Task simulation)
+    function triggerVoiceCommand(cmdId) {
+      switch (cmdId) {
+        case 1:
+          addLog('voice', '[VOICE] >>> MO CUA -> Door Servo OPEN (150°)');
+          setServo(true);
+          break;
+        case 2:
+          addLog('voice', '[VOICE] >>> DONG CUA -> Door Servo CLOSE (90°)');
+          setServo(false);
+          break;
+        case 3:
+          addLog('voice', '[VOICE] >>> MO DEN -> LED ON');
+          setLed(true);
+          break;
+        case 4:
+          addLog('voice', '[VOICE] >>> TAT DEN -> LED OFF');
+          setLed(false);
+          break;
+      }
+    }
+
+    // =========================================================================
+    //  SENSOR SLIDERS & TELEMETRY
+    // =========================================================================
+    function onSensorChange() {
+      const temp = parseFloat(document.getElementById('sliderTemp').value).toFixed(1);
+      const hum = parseInt(document.getElementById('sliderHum').value);
+      const smoke = parseInt(document.getElementById('sliderSmoke').value);
+
+      document.getElementById('txtTemp').textContent = `${temp} °C`;
+      document.getElementById('txtHum').textContent = `${hum} %`;
+      document.getElementById('txtSmoke').textContent = `${smoke} PPM`;
+
+      // Check smoke alert
+      checkSmokeAlert(smoke);
+    }
+
+    function onThresholdChange() {
+      const val = parseInt(document.getElementById('numThreshold').value);
+      if (!isNaN(val)) {
+        mq2Threshold = val;
+        publishState(TOPICS.MQ2_THRESHOLD_STATE, String(val));
+        addLog('system', `[CONFIG] MQ-2 Threshold set to ${val} PPM`);
+      }
+    }
+
+    function checkSmokeAlert(smokePpm) {
+      const banner = document.getElementById('alertBanner');
+      if (smokePpm >= mq2Threshold) {
+        banner.classList.add('show');
+        document.getElementById('alertPpm').textContent = `${smokePpm} PPM`;
+
+        const now = Date.now();
+        if (now - lastAlertMs >= ALERT_COOLDOWN_MS) {
+          lastAlertMs = now;
+          const payload = JSON.stringify({ alert: "SMOKE_HIGH", smokePpm: smokePpm, threshold: mq2Threshold });
+          
+          if (mqttClient && mqttClient.connected) {
+            mqttClient.publish(TOPICS.MQ2_ALERT, payload, { retain: false });
+          }
+          addLog('alert', `[ALERT] Smoke=${smokePpm} PPM >= threshold=${mq2Threshold} -> CANH BAO!`);
+          
+          // Auto turn on buzzer on alert
+          setBuzzer(true);
+        }
+      } else {
+        banner.classList.remove('show');
+      }
+    }
+
+    function startTelemetryLoop() {
+      if (telemetryIntervalId) clearInterval(telemetryIntervalId);
+
+      telemetryIntervalId = setInterval(() => {
+        // Send telemetry if any device is on (matching Embedded.ino logic)
+        const isAnyOn = (ledState || servoState || buzzerState || pumpState);
+        if (!isAnyOn) return;
+
+        const temp = parseFloat(document.getElementById('sliderTemp').value);
+        const hum = parseFloat(document.getElementById('sliderHum').value);
+        const smoke = parseInt(document.getElementById('sliderSmoke').value);
+
+        const payload = JSON.stringify({
+          temperature: temp,
+          humidity: hum,
+          smokePpm: smoke
+        });
+
+        if (mqttClient && mqttClient.connected) {
+          mqttClient.publish(TOPICS.TELEMETRY, payload, { retain: true });
+          addLog('pub', `[TELE] Temp=${temp}°C Hum=${hum}% Smoke=${smoke} PPM`);
+        }
+
+        // Handle auto-reset timers
+        handleAutoReset();
+
+      }, 2000);
+    }
+
+    function handleAutoReset() {
+      const now = Date.now();
+      if (servoState && servoOnTimestamp > 0 && (now - servoOnTimestamp >= SERVO_AUTO_CLOSE_MS)) {
+        addLog('system', '[AUTO] Servo 1 auto-close after 30s timeout.');
+        setServo(false);
+      }
+
+      if (pumpState && pumpOnTimestamp > 0 && (now - pumpOnTimestamp >= PUMP_AUTO_OFF_MS)) {
+        addLog('system', '[AUTO] Servo 2 / Pump auto-off after 60s timeout.');
+        setPump(false);
+      }
+    }
+
+    // =========================================================================
+    //  WEB AUDIO API (SOUND GENERATOR FOR BUZZER)
+    // =========================================================================
+    function playBuzzerSound(play) {
+      try {
+        if (play) {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (buzzerOsc) buzzerOsc.stop();
+
+          buzzerOsc = audioCtx.createOscillator();
+          buzzerOsc.type = 'square';
+          buzzerOsc.frequency.setValueAtTime(1000, audioCtx.currentTime); // 1kHz matching tone(21, 1000)
+
+          const gainNode = audioCtx.createGain();
+          gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+          buzzerOsc.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          buzzerOsc.start();
+        } else {
+          if (buzzerOsc) {
+            buzzerOsc.stop();
+            buzzerOsc = null;
+          }
+        }
+      } catch (e) {
+        console.warn('AudioContext prevented or unsupported', e);
+      }
+    }
+
+    // =========================================================================
+    //  SMOKE PARTICLE CANVAS ANIMATION
+    // =========================================================================
+    const canvas = document.getElementById('smokeCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawSmokeParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const smokePpm = parseInt(document.getElementById('sliderSmoke').value);
+
+      if (smokePpm > 10 && particles.length < smokePpm) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: canvas.height + 10,
+          r: Math.random() * 8 + 4,
+          opacity: Math.random() * 0.5 + 0.2,
+          vy: Math.random() * 1.5 + 0.5
+        });
+      }
+
+      particles.forEach((p, i) => {
+        p.y -= p.vy;
+        p.opacity -= 0.005;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(203, 213, 225, ${p.opacity})`;
+        ctx.fill();
+
+        if (p.opacity <= 0 || p.y < -10) {
+          particles.splice(i, 1);
+        }
+      });
+
+      requestAnimationFrame(drawSmokeParticles);
+    }
+    drawSmokeParticles();
+
+    // =========================================================================
+    //  LOGGING UTILITY
+    // =========================================================================
+    function addLog(type, text) {
+      const consoleEl = document.getElementById('logConsole');
+      const timeStr = new Date().toLocaleTimeString('vi-VN');
+      
+      const div = document.createElement('div');
+      div.className = `log-entry ${type}`;
+      div.innerHTML = `<span class="log-time">[${timeStr}]</span>${escapeHtml(text)}`;
+      
+      consoleEl.appendChild(div);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function clearLogs() {
+      document.getElementById('logConsole').innerHTML = '';
+    }
+
+    // Auto connect on start
+    window.addEventListener('DOMContentLoaded', () => {
+      toggleMqttConnection();
+    });
+  </script>
+</body>
+</html>
