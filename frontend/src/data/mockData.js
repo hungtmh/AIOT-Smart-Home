@@ -18,9 +18,6 @@ export const seriesLegend = [
   { key: 'temperature', label: 'Temperature', value: '28.4 C', color: '#dc2626' },
   { key: 'humidity', label: 'Humidity', value: '64%', color: '#2563eb' },
   { key: 'smoke', label: 'Smoke', value: '18 ppm', color: '#64748b' },
-  { key: 'led', label: 'LED', value: 'ON', color: '#f59e0b' },
-  { key: 'servo', label: 'Servo', value: 'Open', color: '#06b6d4' },
-  { key: 'buzzer', label: 'Buzzer', value: 'OFF', color: '#a855f7' },
 ]
 
 export const chartSeries = [
@@ -78,67 +75,13 @@ export const chartSeries = [
       { x: 900, y: 216, value: '14', time: '21:20:00' },
     ],
   },
-  {
-    key: 'led',
-    label: 'LED',
-    unit: '',
-    color: '#f59e0b',
-    points: [
-      { x: 70, y: 230, value: 'OFF', time: '21:15:30' },
-      { x: 160, y: 230, value: 'OFF', time: '21:16:00' },
-      { x: 250, y: 92, value: 'ON', time: '21:16:30' },
-      { x: 340, y: 92, value: 'ON', time: '21:17:00' },
-      { x: 430, y: 92, value: 'ON', time: '21:17:30' },
-      { x: 520, y: 230, value: 'OFF', time: '21:18:00' },
-      { x: 610, y: 92, value: 'ON', time: '21:18:30' },
-      { x: 700, y: 92, value: 'ON', time: '21:19:00' },
-      { x: 790, y: 92, value: 'ON', time: '21:19:30' },
-      { x: 900, y: 92, value: 'ON', time: '21:20:00' },
-    ],
-  },
-  {
-    key: 'servo',
-    label: 'Servo',
-    unit: '',
-    color: '#06b6d4',
-    points: [
-      { x: 70, y: 220, value: 'Close', time: '21:15:30' },
-      { x: 160, y: 220, value: 'Close', time: '21:16:00' },
-      { x: 250, y: 104, value: 'Open', time: '21:16:30' },
-      { x: 340, y: 104, value: 'Open', time: '21:17:00' },
-      { x: 430, y: 104, value: 'Open', time: '21:17:30' },
-      { x: 520, y: 104, value: 'Open', time: '21:18:00' },
-      { x: 610, y: 220, value: 'Close', time: '21:18:30' },
-      { x: 700, y: 104, value: 'Open', time: '21:19:00' },
-      { x: 790, y: 104, value: 'Open', time: '21:19:30' },
-      { x: 900, y: 104, value: 'Open', time: '21:20:00' },
-    ],
-  },
-  {
-    key: 'buzzer',
-    label: 'Buzzer',
-    unit: '',
-    color: '#a855f7',
-    points: [
-      { x: 70, y: 236, value: 'OFF', time: '21:15:30' },
-      { x: 160, y: 236, value: 'OFF', time: '21:16:00' },
-      { x: 250, y: 236, value: 'OFF', time: '21:16:30' },
-      { x: 340, y: 236, value: 'OFF', time: '21:17:00' },
-      { x: 430, y: 170, value: 'ON', time: '21:17:30' },
-      { x: 520, y: 236, value: 'OFF', time: '21:18:00' },
-      { x: 610, y: 236, value: 'OFF', time: '21:18:30' },
-      { x: 700, y: 236, value: 'OFF', time: '21:19:00' },
-      { x: 790, y: 236, value: 'OFF', time: '21:19:30' },
-      { x: 900, y: 236, value: 'OFF', time: '21:20:00' },
-    ],
-  },
 ]
 
 export const timelineRows = [
-  { time: '21:20:00', temperature: '28.4 C', humidity: '64%', smoke: '18 ppm', led: 'ON', servo: 'Open', buzzer: 'OFF' },
-  { time: '21:19:30', temperature: '28.2 C', humidity: '63%', smoke: '17 ppm', led: 'ON', servo: 'Open', buzzer: 'OFF' },
-  { time: '21:19:00', temperature: '27.9 C', humidity: '64%', smoke: '19 ppm', led: 'OFF', servo: 'Close', buzzer: 'OFF' },
-  { time: '21:18:30', temperature: '29.1 C', humidity: '61%', smoke: '24 ppm', led: 'ON', servo: 'Open', buzzer: 'OFF' },
+  { time: '21:20:00', temperature: '28.4 C', humidity: '64%', smoke: '18 ppm' },
+  { time: '21:19:30', temperature: '28.2 C', humidity: '63%', smoke: '17 ppm' },
+  { time: '21:19:00', temperature: '27.9 C', humidity: '64%', smoke: '19 ppm' },
+  { time: '21:18:30', temperature: '29.1 C', humidity: '61%', smoke: '24 ppm' },
 ]
 
 export const automationRules = [
