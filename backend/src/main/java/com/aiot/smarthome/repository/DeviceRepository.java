@@ -1,5 +1,6 @@
 package com.aiot.smarthome.repository;
 
+import com.aiot.smarthome.dto.ControlLogResponse;
 import com.aiot.smarthome.model.DeviceDefinition;
 import com.aiot.smarthome.model.DeviceState;
 import java.sql.Timestamp;
@@ -134,6 +135,32 @@ public class DeviceRepository {
           result);
     } catch (DataAccessException exception) {
       warnDatabaseFallback(exception);
+    }
+  }
+
+  public List<ControlLogResponse> findControlLogs(int limit) {
+    if (!databaseAvailable) {
+      return List.of();
+    }
+
+    try {
+      return jdbcTemplate.query(
+          """
+          select device_id, requested_state, source, result, created_at
+          from control_logs
+          order by created_at desc
+          limit ?
+          """,
+          (rs, rowNum) -> new ControlLogResponse(
+              rs.getString("device_id"),
+              rs.getBoolean("requested_state") ? "ON" : "OFF",
+              rs.getString("source"),
+              rs.getString("result"),
+              toOffsetDateTime(rs.getTimestamp("created_at"))),
+          limit);
+    } catch (DataAccessException exception) {
+      warnDatabaseFallback(exception);
+      return List.of();
     }
   }
 

@@ -22,7 +22,34 @@ wokwi/     Wokwi ESP32 MQTT simulator
 arduino/   Sketch cho board that
 ```
 
-## 2. Yeu cau cai dat
+## 2. Cach chay du an hieu qua nhat: Docker Compose
+
+Hien tai, ban **chi can dung lenh Docker Compose** de build va chay toan bo du an. Ban **KHONG CAN** cai dat Java, Node.js hay Maven thu cong. Chi can cai dat **Docker Desktop**.
+
+### Cac buoc khoi chay:
+
+1. **Chuon bi file `.env`**:
+   Tao/Dien 2 file moi truong tu file template:
+   - `backend/.env` (tham khao `backend/.env.example`)
+   - `frontend/.env` (tham khao `frontend/.env.example`)
+
+2. **Chay toan bo du an voi Docker Compose**:
+   ```bash
+   docker compose up --build -d
+   ```
+
+3. **Truy cap ung dung**:
+   - **Frontend Dashboard**: [http://localhost:5173](http://localhost:5173)
+   - **Backend API**: [http://localhost:8080](http://localhost:8080)
+
+4. **Dung va xoa container**:
+   ```bash
+   docker compose down
+   ```
+
+---
+
+## 3. Cach chay thu cong (Neu khong dung Docker)
 
 Can cai truoc:
 
@@ -47,7 +74,7 @@ Neu test gia lap thi dung:
 Wokwi
 ```
 
-## 3. Clone va cai dependency
+### Clone va cai dependency thu cong
 
 ```powershell
 git clone <repo-url>

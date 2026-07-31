@@ -4,6 +4,7 @@ import com.aiot.smarthome.model.SensorTelemetry;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -81,6 +82,33 @@ public class TelemetryRepository {
     } catch (DataAccessException exception) {
       warnDatabaseFallback(exception);
       return memoryTelemetry;
+    }
+  }
+
+  public List<SensorTelemetry> findHistory(int limit) {
+    if (!databaseAvailable) {
+      return List.of(memoryTelemetry);
+    }
+
+    try {
+      ensureTelemetryTable();
+
+      return jdbcTemplate.query(
+          """
+          select temperature, humidity, smoke_ppm, measured_at
+          from telemetry_readings
+          order by measured_at desc
+          limit ?
+          """,
+          (rs, rowNum) -> new SensorTelemetry(
+              rs.getDouble("temperature"),
+              rs.getDouble("humidity"),
+              rs.getInt("smoke_ppm"),
+              toOffsetDateTime(rs.getTimestamp("measured_at"))),
+          limit);
+    } catch (DataAccessException exception) {
+      warnDatabaseFallback(exception);
+      return List.of(memoryTelemetry);
     }
   }
 

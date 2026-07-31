@@ -81,3 +81,23 @@ export function commandDevice(deviceId, state) {
 export function getLatestTelemetry() {
   return request('/api/telemetry/latest')
 }
+
+export function getHistoryPage(tab, page = 0, size = 20) {
+  return request(`/api/history/${tab}?page=${page}&size=${size}`)
+}
+
+export function getHistoryCounts() {
+  return request('/api/history/counts')
+}
+
+export function getRecentActivity(limit = 10) {
+  return request(`/api/history/recent-activity?limit=${limit}`)
+}
+
+export function getTelemetryHistory(limit = 30) {
+  return request(`/api/telemetry/history?limit=${limit}`)
+}
+
+export function getControlLogs(limit = 30) {
+  return request(`/api/devices/history/logs?limit=${limit}`)
+}

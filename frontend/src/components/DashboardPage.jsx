@@ -1,4 +1,6 @@
-import { recentActivityRows, sensorCards } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { sensorCards } from '../data/mockData'
+import { getRecentActivity } from '../lib/api'
 import DeviceControlCenter from './DeviceControlCenter'
 import { icons } from './icons'
 import MetricGrid from './MetricGrid'
@@ -27,7 +29,7 @@ function deviceOn(deviceStates, deviceId) {
 function buildLiveSensorCards(telemetry, deviceStates) {
   const ledOn = deviceOn(deviceStates, 'led')
   const servoOpen = deviceOn(deviceStates, 'servo')
-  const buzzerOn = deviceOn(deviceStates, 'buzzer')
+  const pumpOn = deviceOn(deviceStates, 'pump')
   const temperature = telemetry?.temperature ?? 28.4
   const humidity = telemetry?.humidity ?? 64
   const smokePpm = telemetry?.smokePpm ?? 18
@@ -53,8 +55,8 @@ function buildLiveSensorCards(telemetry, deviceStates) {
       return { ...card, value: Math.round(smokePpm).toString(), state: smokePpm >= 70 ? 'Danger' : 'Safe' }
     }
 
-    if (card.label === 'Buzzer') {
-      return { ...card, value: buzzerOn ? 'ON' : 'OFF', state: buzzerOn ? 'Alarm active' : 'No alarm' }
+    if (card.label === 'Mini Water Pump') {
+      return { ...card, value: pumpOn ? 'ON' : 'OFF', state: pumpOn ? 'Pump active' : 'Pump off' }
     }
 
     return card
@@ -76,11 +78,18 @@ function formatUpdatedAt(value, fallback) {
 
 function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
   const { telemetry: latestTelemetry, deviceStates } = useRealtime()
+  const [recentActivity, setRecentActivity] = useState([])
   const liveSensors = buildLiveSensorCards(latestTelemetry, deviceStates)
 
   const smokePpm = Math.round(latestTelemetry?.smokePpm ?? 18)
   const smokeSafe = smokePpm < 70
   const displayLastUpdated = formatUpdatedAt(latestTelemetry?.measuredAt, lastUpdated)
+
+  useEffect(() => {
+    getRecentActivity()
+      .then(setRecentActivity)
+      .catch((error) => console.error('Failed to fetch recent activity:', error))
+  }, [])
 
   return (
     <>
@@ -109,27 +118,7 @@ function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
       <MetricGrid sensors={liveSensors} />
 
       <section className="status-layout" aria-label="System status">
-        <article className="panel automation-panel">
-          <div className="panel-title">
-            <div>
-              <SlidersHorizontal size={19} aria-hidden="true" />
-              <h2>Automation Control</h2>
-            </div>
-            <button
-              className={`switch ${autoMode ? 'on' : ''}`}
-              type="button"
-              aria-pressed={autoMode}
-              onClick={onToggleAutoMode}
-            >
-              <span></span>
-            </button>
-          </div>
-          <div className="automation-body">
-            <span className="badge success">Auto Mode: {autoMode ? 'ON' : 'OFF'}</span>
-            <span className="badge info">User Interaction: Inactive</span>
-            <span className="badge neutral">Threshold Profile: Home</span>
-          </div>
-        </article>
+
 
         <article className="panel">
           <div className="panel-title">
@@ -185,15 +174,21 @@ function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
             </div>
           </div>
           <div className="history-list">
-            {recentActivityRows.map((row) => (
-              <div className="history-row" key={`${row.time}-${row.event}`}>
-                <time>{row.time}</time>
-                <div>
-                  <strong>{row.event}</strong>
-                  <span>{row.detail}</span>
-                </div>
+            {recentActivity.length === 0 ? (
+              <div className="history-row">
+                <div><span>No recent activity</span></div>
               </div>
-            ))}
+            ) : (
+              recentActivity.map((row, index) => (
+                <div className="history-row" key={`${row.time}-${index}`}>
+                  <time>{row.time}</time>
+                  <div>
+                    <strong>{row.event}</strong>
+                    <span>{row.detail}</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </article>
       </section>

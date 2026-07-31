@@ -3,6 +3,8 @@ package com.aiot.smarthome.service;
 import com.aiot.smarthome.dto.TelemetryResponse;
 import com.aiot.smarthome.model.SensorTelemetry;
 import com.aiot.smarthome.realtime.RealtimeHub;
+import java.util.List;
+import java.util.stream.Collectors;
 import com.aiot.smarthome.repository.TelemetryRepository;
 import org.springframework.stereotype.Service;
 
@@ -23,5 +25,11 @@ public class TelemetryService {
   public void handleTelemetry(double temperature, double humidity, int smokePpm) {
     SensorTelemetry telemetry = repository.save(temperature, humidity, smokePpm);
     realtimeHub.broadcastTelemetry(TelemetryResponse.from(telemetry));
+  }
+
+  public List<TelemetryResponse> getTelemetryHistory(int limit) {
+    return repository.findHistory(limit).stream()
+        .map(TelemetryResponse::from)
+        .collect(Collectors.toList());
   }
 }
