@@ -226,8 +226,8 @@ void setLed(bool enabled) {
 
 void setServo(bool enabled) {
   servoState = enabled;
-  doorServo.write(enabled ? 90 : 0);
-  Serial.printf("[SERVO] %s\n", enabled ? "OPEN (90°)" : "CLOSE (0°)");
+  doorServo.write(enabled ? 150 : 90);
+  Serial.printf("[SERVO] %s\n", enabled ? "OPEN (150°)" : "CLOSE (90°)");
   publishState(SERVO_STATE_TOPIC, servoState, "OPEN", "CLOSE");
 
   // Ghi nhận thời điểm mở để auto-close
@@ -729,7 +729,7 @@ void setup() {
 
   doorServo.setPeriodHertz(50);
   doorServo.attach(SERVO_PIN, 500, 2400);
-  doorServo.write(0);
+  doorServo.write(90);
 
   windowServo.setPeriodHertz(50);
   windowServo.attach(SERVO2_PIN, 500, 2400);

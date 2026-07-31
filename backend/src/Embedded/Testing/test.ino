@@ -93,7 +93,7 @@ void setup()
     
     // Attach servo với độ rộng xung chuẩn của SG90 (500us - 2400us)
     doorServo.attach(SERVO_PIN, 500, 2400);
-    doorServo.write(0); // Trạng thái mặc định đóng (0 độ)
+    doorServo.write(90); // Trạng thái mặc định đóng (90 độ)
     
     windowServo.attach(SERVO2_PIN, 500, 2400);
     windowServo.write(0); // Trạng thái mặc định đóng (0 độ)
@@ -198,12 +198,12 @@ void run_speech_recognition() {
             
             // Phân loại các nhãn hành động
             if (strcmp(detected_label, "mo_cua") == 0) {
-                ei_printf("   -> HANH DONG: MO CUA -> Xoay Servo sang 90 do <<<\n");
-                doorServo.write(90);
+                ei_printf("   -> HANH DONG: MO CUA -> Xoay Servo sang 150 do <<<\n");
+                doorServo.write(150);
             } 
             else if (strcmp(detected_label, "dong_cua") == 0) {
-                ei_printf("   -> HANH DONG: DONG CUA -> Xoay Servo sang 0 do <<<\n");
-                doorServo.write(0);
+                ei_printf("   -> HANH DONG: DONG CUA -> Xoay Servo sang 90 do <<<\n");
+                doorServo.write(90);
             }
             else if (strcmp(detected_label, "mo_den") == 0) {
                 ei_printf("   -> HANH DONG: MO DEN -> Bat LED <<<\n");
@@ -242,15 +242,15 @@ void loop()
             ei_printf("   -> Kiem tra LED hoan thanh.\n\n");
             
             // 2. Kiểm tra Servo
-            ei_printf("[2/5] Kiem tra 2 Servo SG90 (Xoay 0 -> 90 -> 0 do)...\n");
-            ei_printf("   - Xoay cua sang 90 do...\n");
-            doorServo.write(90);
+            ei_printf("[2/5] Kiem tra 2 Servo SG90 (Cua: 90 -> 150 -> 90 do, Cua so: 0 -> 90 -> 0 do)...\n");
+            ei_printf("   - Xoay cua sang 150 do...\n");
+            doorServo.write(150);
             delay(500);
             ei_printf("   - Xoay cua so sang 90 do...\n");
             windowServo.write(90);
             delay(1000);
-            ei_printf("   - Quay lai 0 do...\n");
-            doorServo.write(0);
+            ei_printf("   - Quay cua ve 90 do, cua so ve 0 do...\n");
+            doorServo.write(90);
             windowServo.write(0);
             delay(1000);
             ei_printf("   -> Kiem tra Servo hoan thanh.\n\n");
@@ -497,11 +497,11 @@ static int i2s_deinit(void) {
 
 static void controlDoorServo(const char* label) {
     if (strcmp(label, "mo_cua") == 0) {
-        ei_printf(">>> HANH DONG: MO CUA -> Xoay Servo sang 90 do <<<\n");
-        doorServo.write(90);
+        ei_printf(">>> HANH DONG: MO CUA -> Xoay Servo sang 150 do <<<\n");
+        doorServo.write(150);
     } else if (strcmp(label, "dong_cua") == 0) {
-        ei_printf(">>> HANH DONG: DONG CUA -> Xoay Servo sang 0 do <<<\n");
-        doorServo.write(0);
+        ei_printf(">>> HANH DONG: DONG CUA -> Xoay Servo sang 90 do <<<\n");
+        doorServo.write(90);
     }
 }
 

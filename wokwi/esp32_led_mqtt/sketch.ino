@@ -80,7 +80,7 @@ void setLed(bool enabled) {
 
 void setServo(bool enabled) {
   servoState = enabled;
-  valveServo.write(enabled ? 90 : 0);
+  valveServo.write(enabled ? 150 : 90);
   Serial.print("[SERVO] ");
   Serial.println(enabled ? "OPEN" : "CLOSE");
   publishDeviceState(SERVO_STATE_TOPIC, servoState, "OPEN", "CLOSE");
@@ -238,7 +238,7 @@ void setup() {
   digitalWrite(PUMP_PIN, LOW);
 
   valveServo.attach(SERVO_PIN);
-  valveServo.write(0);
+  valveServo.write(90);
   dhtSensor.setup(DHT_PIN, DHTesp::DHT22);
 
   wifiClient.setInsecure();
