@@ -75,11 +75,7 @@ const char* MQ2_THRESHOLD_STATE_TOPIC = "aiot/esp32-s3/device/mq2/threshold/stat
 #define DHTPIN       15   // DHT11 Data
 #define DHTTYPE      DHT11
 #define SERVO_PIN    18   // Servo SG90 #1 (Cửa chính)
-<<<<<<< Updated upstream
 #define RELAY_PUMP_PIN 19 // Relay điều khiển máy bơm nước
-=======
-#define PUMP_PIN     19   // Máy bơm (Relay điều khiển nước)
->>>>>>> Stashed changes
 #define BUZZER_PIN   21   // Buzzer cảnh báo
 #define MQ2_AO_PIN   34   // MQ-2 Analog Output  (đọc giá trị PPM)
 
@@ -258,11 +254,7 @@ void setBuzzer(bool enabled) {
 
 void setPump(bool enabled) {
   pumpState = enabled;
-<<<<<<< Updated upstream
   digitalWrite(RELAY_PUMP_PIN, enabled ? HIGH : LOW);
-=======
-  digitalWrite(PUMP_PIN, enabled ? HIGH : LOW);
->>>>>>> Stashed changes
   Serial.printf("[PUMP -> RELAY] %s\n", enabled ? "ON" : "OFF");
   publishState(PUMP_STATE_TOPIC, pumpState);
 
@@ -824,13 +816,7 @@ void setup() {
   digitalWrite(BUZZER_PIN, LOW);
   digitalWrite(RELAY_PUMP_PIN, LOW);
 
-<<<<<<< Updated upstream
-=======
-  // --- Relay Máy bơm ---
-  pinMode(PUMP_PIN, OUTPUT);
-  digitalWrite(PUMP_PIN, LOW); // Tắt bơm lúc khởi động
 
->>>>>>> Stashed changes
   // --- Servo SG90 #1 (Cửa chính) ---
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
