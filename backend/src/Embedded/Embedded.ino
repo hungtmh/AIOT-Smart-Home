@@ -27,6 +27,7 @@
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "driver/i2s.h"
+#include "esp_heap_caps.h"
 
 // =============================================================================
 //  CẤU HÌNH WIFI
@@ -116,6 +117,9 @@ unsigned long lastAlertMs   = 0;
 unsigned long servoOnTimestamp = 0;   // Thời điểm servo 1 được mở
 unsigned long pumpOnTimestamp  = 0;   // Thời điểm servo 2 được mở (qua topic pump)
 
+// --- Cờ hiệu cho InferenceTask biết MQTT đang kết nối TLS (chiếm ~40KB DRAM tạm) ---
+static volatile bool mqttConnecting = false;
+
 // --- Bộ lọc trung bình cho cảm biến ---
 const int FILTER_SIZE = 5;
 float tempBuffer[FILTER_SIZE];
@@ -136,9 +140,9 @@ static constexpr size_t   AUDIO_BLOCK_BYTES   = AUDIO_BLOCK_SAMPLES * sizeof(int
 // Circular buffer cho Inference Task (1 giây = 16000 samples)
 static constexpr int      INFERENCE_WINDOW_SAMPLES = EI_CLASSIFIER_RAW_SAMPLE_COUNT; // 16000
 
-// Ring Buffer FreeRTOS (đủ chứa 3 block để Audio Task không bị block)
+// Ring Buffer FreeRTOS (2 blocks đủ cho pipeline, giảm từ 3 để tiết kiệm 8KB DRAM)
 static RingbufHandle_t    audioRingBuf = NULL;
-static constexpr size_t   RING_BUF_SIZE = AUDIO_BLOCK_BYTES * 3;
+static constexpr size_t   RING_BUF_SIZE = AUDIO_BLOCK_BYTES * 2;
 
 // Circular buffer lưu 1 giây audio cho inference
 static int16_t            inferenceBuffer[INFERENCE_WINDOW_SAMPLES];
@@ -540,12 +544,12 @@ static int inferenceSignalGetData(size_t offset, size_t length, float* out_ptr) 
 static void inferenceTask(void* pvParameters) {
   Serial.println("[VOICE] Inference Task started on Core 1.");
 
-  // Chờ I2S ổn định trước khi bắt đầu inference
-  vTaskDelay(pdMS_TO_TICKS(500));
+  // Chờ WiFi + MQTT kết nối xong trước khi bắt đầu inference
+  // TLS handshake chiếm tạm ~40KB DRAM, nếu chạy classifier cùng lúc sẽ hết RAM
+  vTaskDelay(pdMS_TO_TICKS(5000));
 
-  // Khởi tạo Edge Impulse classifier
-  run_classifier_init();
-  Serial.println("[VOICE] Edge Impulse classifier initialized.");
+  // run_classifier_init() đã được gọi trong setup() (pre-allocate FFT)
+  Serial.println("[VOICE] Edge Impulse classifier ready (pre-allocated in setup).");
 
   for (;;) {
     // Nhận 1 block từ Ring Buffer (block cho đến khi có data)
@@ -576,6 +580,20 @@ static void inferenceTask(void* pvParameters) {
       continue;
     }
 
+    // === Kiểm tra DRAM trước khi chạy classifier ===
+    // Nếu MQTT đang handshake TLS (chiếm ~40KB DRAM tạm), chờ để tránh crash
+    if (mqttConnecting) {
+      vTaskDelay(pdMS_TO_TICKS(200));
+      continue;
+    }
+
+    uint32_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    if (largestBlock < 25000) {
+      // Không đủ DRAM cho FFT/MFCC, chờ rồi thử lại
+      vTaskDelay(pdMS_TO_TICKS(500));
+      continue;
+    }
+
     // === Chạy classifier ===
     signal_t signal;
     signal.total_length = INFERENCE_WINDOW_SAMPLES;
@@ -585,7 +603,12 @@ static void inferenceTask(void* pvParameters) {
     EI_IMPULSE_ERROR err = run_classifier(&signal, &result, false);
 
     if (err != EI_IMPULSE_OK) {
-      Serial.printf("[VOICE] Classifier error: %d\n", err);
+      static int classifierErrorCount = 0;
+      classifierErrorCount++;
+      if (classifierErrorCount <= 3) {
+        Serial.printf("[VOICE] Classifier error: %d (lan thu %d)\n", err, classifierErrorCount);
+      }
+      vTaskDelay(pdMS_TO_TICKS(500)); // Chờ rồi thử lại
       continue;
     }
 
@@ -603,6 +626,12 @@ static void inferenceTask(void* pvParameters) {
       }
     }
 
+    // --- DEBUG LOG: IN RA TẤT CẢ CÁC LẦN NHẬN DIỆN ---
+    if (bestIdx >= 0 && maxScore > 0.3f) { // Chỉ in ra khi điểm > 30% để đỡ trôi log
+      Serial.printf("[VOICE-DEBUG] Nhãn dự đoán cao nhất: '%s' với điểm số: %.1f%%\n", 
+                    result.classification[bestIdx].label, maxScore * 100.0f);
+    }
+
     // Kiểm tra threshold + cooldown
     if (maxScore >= CONFIDENCE_THRESHOLD && bestIdx >= 0) {
       unsigned long now = millis();
@@ -610,14 +639,19 @@ static void inferenceTask(void* pvParameters) {
         lastVoiceActionMs = now;
 
         const char* label = result.classification[bestIdx].label;
-        Serial.printf("[VOICE] Detected: %s (%.1f%%)\n", label, maxScore * 100.0f);
+        Serial.printf("[VOICE] >>> ĐÃ VƯỢT NGƯỠNG (%.1f%%) - Nhận diện: '%s'\n", maxScore * 100.0f, label);
 
         // Map label → voiceCommand (dispatch bởi loop() trên cùng Core 1)
-        if      (strcmp(label, "mo_cua")   == 0) voiceCommand = 1;
-        else if (strcmp(label, "dong_cua") == 0) voiceCommand = 2;
-        else if (strcmp(label, "mo_den")   == 0) voiceCommand = 3;
-        else if (strcmp(label, "tat_den")  == 0) voiceCommand = 4;
+        if      (strcmp(label, "mo_cua")   == 0) { voiceCommand = 1; Serial.println("[VOICE] Khớp lệnh: mo_cua -> voiceCommand = 1"); }
+        else if (strcmp(label, "dong_cua") == 0) { voiceCommand = 2; Serial.println("[VOICE] Khớp lệnh: dong_cua -> voiceCommand = 2"); }
+        else if (strcmp(label, "mo_den")   == 0) { voiceCommand = 3; Serial.println("[VOICE] Khớp lệnh: mo_den -> voiceCommand = 3"); }
+        else if (strcmp(label, "tat_den")  == 0) { voiceCommand = 4; Serial.println("[VOICE] Khớp lệnh: tat_den -> voiceCommand = 4"); }
+        else { Serial.printf("[VOICE] LỖI: Nhãn '%s' không khớp với bất kỳ chữ nào trong code!\n", label); }
+      } else {
+        Serial.printf("[VOICE-DEBUG] Bị bỏ qua do chưa hết thời gian chờ chống nhiễu (Cooldown).\n");
       }
+    } else if (bestIdx >= 0 && maxScore > 0.3f) {
+      Serial.printf("[VOICE-DEBUG] Bị bỏ qua do điểm số (%.1f%%) < ngưỡng %d%%\n", maxScore * 100.0f, (int)(CONFIDENCE_THRESHOLD * 100));
     }
 
     // Yield cho các task khác trên Core 1 (loop, MQTT)
@@ -699,29 +733,69 @@ void connectWifi() {
 // =============================================================================
 
 void connectMqtt() {
-  while (!mqtt.connected()) {
+  int retries = 0;
+  const int maxRetries = 3;  // Tối đa 3 lần thử khi khởi động
+  
+  while (!mqtt.connected() && retries < maxRetries) {
     Serial.print("[MQTT] Connecting to HiveMQ Cloud... ");
+    
+    mqttConnecting = true;  // Báo hiệu InferenceTask tạm dừng
 
     if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
+      mqttConnecting = false;
       Serial.println("Connected!");
 
-      // Subscribe các topic nhận lệnh (khớp DeviceCatalog: led, servo, buzzer, pump)
+      // Subscribe các topic nhận lệnh
       mqtt.subscribe(LED_CMD_TOPIC);
       mqtt.subscribe(SERVO_CMD_TOPIC);
       mqtt.subscribe(BUZZER_CMD_TOPIC);
       mqtt.subscribe(PUMP_CMD_TOPIC);
-
-      // Subscribe topic cài đặt ngưỡng MQ-2
       mqtt.subscribe(MQ2_THRESHOLD_CMD_TOPIC);
 
       Serial.println("[MQTT] Subscribed to all command topics.");
-
-      // Publish trạng thái hiện tại để đồng bộ với Web
       publishAllStates();
+      return;  // Thành công, thoát ngay
     } else {
-      Serial.printf("Failed, rc=%d. Retry in 2s...\n", mqtt.state());
-      delay(2000);
+      mqttConnecting = false;
+      retries++;
+      Serial.printf("Failed, rc=%d. (lan %d/%d)\n", mqtt.state(), retries, maxRetries);
+      if (retries < maxRetries) delay(2000);
     }
+  }
+  
+  if (!mqtt.connected()) {
+    Serial.println("[MQTT] Het so lan thu. Se thu lai sau trong loop().");
+  }
+}
+
+/**
+ * Thử kết nối lại MQTT 1 lần duy nhất (không chặn loop).
+ * Gọi từ loop() khi phát hiện mất kết nối.
+ */
+void tryReconnectMqtt() {
+  static unsigned long lastAttempt = 0;
+  unsigned long now = millis();
+  
+  // Chỉ thử lại mỗi 10 giây, tránh TLS handshake liên tục chiếm RAM
+  if (now - lastAttempt < 10000) return;
+  lastAttempt = now;
+  
+  Serial.print("[MQTT] Reconnecting... ");
+  mqttConnecting = true;
+  
+  if (mqtt.connect(MQTT_CLIENT_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
+    mqttConnecting = false;
+    Serial.println("Connected!");
+    
+    mqtt.subscribe(LED_CMD_TOPIC);
+    mqtt.subscribe(SERVO_CMD_TOPIC);
+    mqtt.subscribe(BUZZER_CMD_TOPIC);
+    mqtt.subscribe(PUMP_CMD_TOPIC);
+    mqtt.subscribe(MQ2_THRESHOLD_CMD_TOPIC);
+    publishAllStates();
+  } else {
+    mqttConnecting = false;
+    Serial.printf("Failed, rc=%d\n", mqtt.state());
   }
 }
 
@@ -732,6 +806,7 @@ void connectMqtt() {
 void setup() {
   Serial.begin(115200);
   Serial.println("\n=== AIOT Smart Home - ESP32 Firmware ===");
+  Serial.printf("[MEM] Free heap khi bat dau: %u bytes\n", ESP.getFreeHeap());
 
   // --- Cấu hình chân GPIO ---
   pinMode(LED_PIN, OUTPUT);
@@ -759,36 +834,93 @@ void setup() {
   memset(humBuffer,   0, sizeof(humBuffer));
   memset(smokeBuffer, 0, sizeof(smokeBuffer));
 
-  // --- MQTT Client ---
+  Serial.printf("[MEM] Free heap sau khi init GPIO/Servo/DHT: %u bytes\n", ESP.getFreeHeap());
+
+  // =====================================================================
+  // =====================================================================
+  //  KẾT NỐI WIFI + MQTT (TRƯỚC KHI KHỞI TẠO VOICE)
+  //  Lý do: TLS handshake rất nhạy cảm với tài nguyên. Nếu chạy I2S
+  //  hoặc InferenceTask cùng lúc, TLS handshake có thể bị timeout (rc=-2).
+  // =====================================================================
   wifiClient.setInsecure();  // HiveMQ Cloud TLS (skip cert verify)
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setCallback(onMqttMessage);
 
-  // --- Kết nối ---
   connectWifi();
-  connectMqtt();
+  Serial.printf("[MEM] Free heap sau WiFi connect: %u bytes\n", ESP.getFreeHeap());
 
-  // --- Voice Recognition (Edge Impulse + INMP441) ---
+  connectMqtt();
+  Serial.printf("[MEM] Free heap sau MQTT/TLS connect: %u bytes\n", ESP.getFreeHeap());
+
+  // =====================================================================
+  //  VOICE RECOGNITION - KHỞI TẠO SAU WIFI/MQTT
+  //  (Đã giảm stack/buffer để đảm bảo đủ RAM sau khi TLS chiếm chỗ)
+  // =====================================================================
+  Serial.printf("[MEM] Free heap truoc khi init Voice: %u bytes\n", ESP.getFreeHeap());
+
   if (i2s_mic_init(EI_CLASSIFIER_FREQUENCY) != 0) {
     Serial.println("[VOICE] ERROR: I2S init failed! Voice recognition disabled.");
   } else {
+    Serial.printf("[MEM] Free heap sau I2S init: %u bytes\n", ESP.getFreeHeap());
+
     // Tạo Ring Buffer FreeRTOS (byte buffer type)
     audioRingBuf = xRingbufferCreate(RING_BUF_SIZE, RINGBUF_TYPE_BYTEBUF);
     if (audioRingBuf == NULL) {
-      Serial.println("[VOICE] ERROR: Ring Buffer creation failed!");
+      Serial.println("[VOICE] ERROR: Ring Buffer creation FAILED! (Het RAM)");
     } else {
-      // Audio Task: Core 0, Priority 10 (cao hơn Inference Task)
-      // Stack 8KB đủ cho I2S read + chuyển đổi 32→16 bit
-      xTaskCreatePinnedToCore(audioTask, "AudioTask", 8192, NULL, 10, NULL, 0);
+      Serial.printf("[MEM] Free heap sau RingBuf: %u bytes\n", ESP.getFreeHeap());
 
-      // Inference Task: Core 1, Priority 5 (thấp hơn Audio Task, cao hơn loop)
-      // Stack 32KB cho Edge Impulse classifier (DSP + TFLite)
-      xTaskCreatePinnedToCore(inferenceTask, "InferTask", 32768, NULL, 5, NULL, 1);
+      // =============================================================
+      //  PRE-ALLOCATE Edge Impulse FFT/DSP buffers
+      // =============================================================
+      Serial.println("[VOICE] Pre-allocating FFT/DSP buffers...");
+      Serial.printf("[MEM-DIAG] Truoc pre-alloc: Free DRAM=%u, Largest DRAM block=%u\n",
+                    heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+                    heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+      run_classifier_init();
+      {
+        signal_t warmup_signal;
+        warmup_signal.total_length = INFERENCE_WINDOW_SAMPLES;
+        warmup_signal.get_data = &inferenceSignalGetData;
+        ei_impulse_result_t warmup_result = { 0 };
+        EI_IMPULSE_ERROR warmup_err = run_classifier(&warmup_signal, &warmup_result, false);
+        if (warmup_err == EI_IMPULSE_OK) {
+          Serial.println("[VOICE] FFT/DSP pre-allocated THANH CONG!");
+        } else {
+          Serial.printf("[VOICE] WARNING: Pre-alloc classifier error: %d\n", warmup_err);
+        }
+      }
+      Serial.printf("[MEM-DIAG] Sau pre-alloc: Free DRAM=%u, Largest DRAM block=%u\n",
+                    heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+                    heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
 
-      Serial.println("[VOICE] Audio + Inference tasks created.");
+      // Audio Task: Core 0, Priority 10 (4KB stack đủ cho I2S read + convert)
+      BaseType_t audioResult = xTaskCreatePinnedToCore(
+          audioTask, "AudioTask", 4096, NULL, 10, NULL, 0);
+      if (audioResult != pdPASS) {
+        Serial.println("[VOICE] ERROR: AudioTask creation FAILED!");
+      } else {
+        Serial.printf("[MEM] Free heap sau AudioTask: %u bytes\n", ESP.getFreeHeap());
+      }
+
+      // Inference Task: Core 1, Priority 5 (16KB stack)
+      BaseType_t inferResult = xTaskCreatePinnedToCore(
+          inferenceTask, "InferTask", 16384, NULL, 5, NULL, 1);
+      if (inferResult != pdPASS) {
+        Serial.println("[VOICE] ERROR: InferTask creation FAILED!");
+        Serial.printf("[MEM] Free heap: %u bytes\n", ESP.getFreeHeap());
+      } else {
+        Serial.printf("[MEM] Free heap sau InferTask: %u bytes\n", ESP.getFreeHeap());
+      }
+
+      if (audioResult == pdPASS && inferResult == pdPASS) {
+        Serial.println("[VOICE] Audio + Inference tasks created THANH CONG.");
+      }
     }
   }
 
+  Serial.printf("\n[MEM] === TONG KET: Free heap cuoi setup = %u bytes ===\n", ESP.getFreeHeap());
+  Serial.printf("[MEM] Largest free block: %u bytes\n", ESP.getMaxAllocHeap());
   Serial.println("[READY] System initialized. Waiting for commands...\n");
 }
 
@@ -802,9 +934,9 @@ void loop() {
     connectWifi();
   }
 
-  // Tự động kết nối lại MQTT nếu mất
+  // Tự động kết nối lại MQTT nếu mất (KHÔNG CHẶN loop)
   if (!mqtt.connected()) {
-    connectMqtt();
+    tryReconnectMqtt();
   }
 
   mqtt.loop();
@@ -825,6 +957,8 @@ void loop() {
   if (voiceCommand != 0) {
     int cmd = voiceCommand;
     voiceCommand = 0;  // Clear trước khi xử lý
+    
+    Serial.printf("\n[LOOP-DEBUG] Đã bắt được lệnh voiceCommand = %d từ hàm loop(). Đang thực thi phần cứng...\n", cmd);
 
     switch (cmd) {
       case 1:  // mo_cua
