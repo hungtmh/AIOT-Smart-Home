@@ -19,8 +19,6 @@ public class FireAlert {
 
     public FireAlert() {
     }
-
-
     public FireAlert(
             Long id,
             String deviceId,

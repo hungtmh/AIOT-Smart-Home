@@ -5,6 +5,7 @@ import com.aiot.smarthome.realtime.RealtimeHub;
 import org.springframework.stereotype.Service;
 
 import java.util.Base64;
+import java.time.LocalDateTime;
 
 @Service
 public class AlertService {
@@ -23,8 +24,15 @@ public class AlertService {
     // Convert image to Base64
     String base64Image = Base64.getEncoder().encodeToString(imageBytes);
 
-    // Broadcast the alert to WebSocket clients
-    FireAlertResponse alertResponse = new FireAlertResponse("FIRE", base64Image, System.currentTimeMillis());
-    realtimeHub.broadcastAlert(alertResponse);
+  FireAlertResponse alertResponse = new FireAlertResponse(
+      null,                    // id
+      "ESP32",                 // deviceId
+      "",                      // imagePath (AlertService không có đường dẫn ảnh)
+      1.0,                     // confidence
+      LocalDateTime.now(),     // detectedAt
+      "FIRE"                   // status
+  );
+
+realtimeHub.broadcastFireAlert(alertResponse);    realtimeHub.broadcastAlert(alertResponse);
   }
 }

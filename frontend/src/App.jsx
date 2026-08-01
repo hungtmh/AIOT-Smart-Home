@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { useEffect, useState } from "react";
-import "./App.css";
 import AutomationPage from "./components/AutomationPage";
 import DashboardPage from "./components/DashboardPage";
 import HistoryPage from "./components/HistoryPage";
@@ -11,12 +9,6 @@ import LoginPage from "./components/LoginPage";
 import SettingsPage from "./components/SettingsPage";
 import Sidebar from "./components/Sidebar";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
-import { RealtimeProvider } from "./realtime/RealtimeProvider";
-
-import { icons } from "./components/icons";
-
-import { isSupabaseConfigured, supabase } from "./lib/supabase";
-
 import { RealtimeProvider } from "./realtime/RealtimeProvider";
 
 const { ShieldCheck, X } = icons;

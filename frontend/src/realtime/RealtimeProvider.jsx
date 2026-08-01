@@ -46,11 +46,6 @@ function mergeDeviceState(states, nextState) {
 export function RealtimeProvider({ session, children }) {
   const [deviceStates, setDeviceStates] = useState([]);
   const [telemetry, setTelemetry] = useState(null);
-  const [fireAlert, setFireAlert] = useState(null);
-  const [connectionState, setConnectionState] = useState("connecting");
-  const [error, setError] = useState("");
-  const [deviceStates, setDeviceStates] = useState([]);
-  const [telemetry, setTelemetry] = useState(null);
   const [connectionState, setConnectionState] = useState("connecting");
   const [error, setError] = useState("");
   const [fireAlert, setFireAlert] = useState(null);
