@@ -11,18 +11,14 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-
 @Repository
 public class FireAlertRepository {
 
-
     private final JdbcTemplate jdbcTemplate;
-
 
     public FireAlertRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
-
 
     public FireAlert save(FireAlert alert) {
 
@@ -39,7 +35,6 @@ public class FireAlertRepository {
             RETURNING id
             """;
 
-
         Long id = jdbcTemplate.queryForObject(
                 sql,
                 Long.class,
@@ -50,13 +45,10 @@ public class FireAlertRepository {
                 alert.getStatus()
         );
 
-
         alert.setId(id);
 
         return alert;
     }
-
-
 
     public List<FireAlert> findAll() {
 
@@ -66,14 +58,11 @@ public class FireAlertRepository {
             ORDER BY detected_at DESC
             """;
 
-
         return jdbcTemplate.query(
                 sql,
                 this::mapRow
         );
     }
-
-
 
     public Optional<FireAlert> findLatest() {
 
@@ -84,27 +73,21 @@ public class FireAlertRepository {
             LIMIT 1
             """;
 
-
         List<FireAlert> result =
                 jdbcTemplate.query(
                         sql,
                         this::mapRow
                 );
 
-
         return result.stream().findFirst();
     }
-
-
 
     private FireAlert mapRow(
             ResultSet rs,
             int row
     ) throws SQLException {
 
-
         return new FireAlert(
-
                 rs.getLong("id"),
                 rs.getString("device_id"),
                 rs.getString("image_path"),
@@ -116,5 +99,4 @@ public class FireAlertRepository {
                 rs.getString("status")
         );
     }
-
 }

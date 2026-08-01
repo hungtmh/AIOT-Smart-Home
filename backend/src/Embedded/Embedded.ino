@@ -149,6 +149,9 @@ static int16_t            inferenceBuffer[INFERENCE_WINDOW_SAMPLES];
 static int                inferenceWritePos = 0;
 static int                inferenceBlockCount = 0; // Đếm số block đã nhận (cần 4 block = 1s)
 
+// Cờ đồng bộ: Không cho phép tasks thu âm/inference chạy khi chưa khởi tạo xong I2S/RingBuf
+static volatile bool      voiceSystemReady = false;
+
 // Voice command truyền từ Inference Task sang loop() — thread-safe
 // 0 = không có lệnh, 1 = mo_cua, 2 = dong_cua, 3 = mo_den, 4 = tat_den
 static volatile int       voiceCommand = 0;
@@ -416,7 +419,7 @@ static int i2s_mic_init(uint32_t sampling_rate) {
     .channel_format       = I2S_CHANNEL_FMT_ONLY_LEFT,
     .communication_format = I2S_COMM_FORMAT_I2S,
     .intr_alloc_flags     = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count        = 8,
+    .dma_buf_count        = 4,
     .dma_buf_len          = 1024,
     .use_apll             = false,
     .tx_desc_auto_clear   = false,
@@ -471,7 +474,13 @@ static void audioTask(void* pvParameters) {
   // Buffer 16-bit sau khi chuyển đổi
   static int16_t pcmBlock[AUDIO_BLOCK_SAMPLES];
 
-  Serial.println("[VOICE] Audio Task started on Core 0.");
+  Serial.println("[VOICE] Audio Task started on Core 0. Waiting for system ready...");
+
+  // Chờ cho đến khi I2S và RingBuffer được khởi tạo xong hoàn toàn trong setup()
+  while (!voiceSystemReady) {
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+  Serial.println("[VOICE] Audio Task bắt đầu thu âm từ I2S.");
 
   for (;;) {
     size_t bytesRead = 0;
@@ -859,63 +868,65 @@ void setup() {
   // =====================================================================
   Serial.printf("[MEM] Free heap truoc khi init Voice: %u bytes\n", ESP.getFreeHeap());
 
+  // =============================================================
+  //  PRE-ALLOCATE Edge Impulse FFT/DSP buffers
+  //  Làm TRƯỚC I2S và RingBuffer để tận dụng mảng DRAM liên tục
+  // =============================================================
+  Serial.println("[VOICE] Pre-allocating FFT/DSP buffers...");
+  Serial.printf("[MEM-DIAG] Truoc pre-alloc: Free DRAM=%u, Largest DRAM block=%u\n",
+                heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+                heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+  run_classifier_init();
+  {
+    signal_t warmup_signal;
+    warmup_signal.total_length = INFERENCE_WINDOW_SAMPLES;
+    warmup_signal.get_data = &inferenceSignalGetData;
+    ei_impulse_result_t warmup_result = { 0 };
+    EI_IMPULSE_ERROR warmup_err = run_classifier(&warmup_signal, &warmup_result, false);
+    if (warmup_err == EI_IMPULSE_OK) {
+      Serial.println("[VOICE] FFT/DSP pre-allocated THANH CONG!");
+    } else {
+      Serial.printf("[VOICE] WARNING: Pre-alloc classifier error: %d\n", warmup_err);
+    }
+  }
+  Serial.printf("[MEM-DIAG] Sau pre-alloc: Free DRAM=%u, Largest DRAM block=%u\n",
+                heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+                heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+
+  // 1. Tạo Inference Task (Core 1, 16KB stack) ngay sau FFT pre-alloc
+  // để chiếm khối 32.7KB DRAM liên tục trước khi I2S/RingBuf cắt nhỏ RAM.
+  BaseType_t inferResult = xTaskCreatePinnedToCore(
+      inferenceTask, "InferTask", 16384, NULL, 5, NULL, 1);
+  if (inferResult != pdPASS) {
+    Serial.println("[VOICE] ERROR: InferTask creation FAILED!");
+  } else {
+    Serial.printf("[MEM] Free heap sau InferTask: %u bytes\n", ESP.getFreeHeap());
+  }
+
+  // 2. Tạo Audio Task (Core 0, 4KB stack)
+  BaseType_t audioResult = xTaskCreatePinnedToCore(
+      audioTask, "AudioTask", 4096, NULL, 10, NULL, 0);
+  if (audioResult != pdPASS) {
+    Serial.println("[VOICE] ERROR: AudioTask creation FAILED!");
+  } else {
+    Serial.printf("[MEM] Free heap sau AudioTask: %u bytes\n", ESP.getFreeHeap());
+  }
+
+  // 3. Khởi tạo I2S hardware
   if (i2s_mic_init(EI_CLASSIFIER_FREQUENCY) != 0) {
     Serial.println("[VOICE] ERROR: I2S init failed! Voice recognition disabled.");
   } else {
     Serial.printf("[MEM] Free heap sau I2S init: %u bytes\n", ESP.getFreeHeap());
 
-    // Tạo Ring Buffer FreeRTOS (byte buffer type)
+    // 4. Tạo Ring Buffer FreeRTOS
     audioRingBuf = xRingbufferCreate(RING_BUF_SIZE, RINGBUF_TYPE_BYTEBUF);
     if (audioRingBuf == NULL) {
       Serial.println("[VOICE] ERROR: Ring Buffer creation FAILED! (Het RAM)");
     } else {
       Serial.printf("[MEM] Free heap sau RingBuf: %u bytes\n", ESP.getFreeHeap());
-
-      // =============================================================
-      //  PRE-ALLOCATE Edge Impulse FFT/DSP buffers
-      // =============================================================
-      Serial.println("[VOICE] Pre-allocating FFT/DSP buffers...");
-      Serial.printf("[MEM-DIAG] Truoc pre-alloc: Free DRAM=%u, Largest DRAM block=%u\n",
-                    heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
-                    heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
-      run_classifier_init();
-      {
-        signal_t warmup_signal;
-        warmup_signal.total_length = INFERENCE_WINDOW_SAMPLES;
-        warmup_signal.get_data = &inferenceSignalGetData;
-        ei_impulse_result_t warmup_result = { 0 };
-        EI_IMPULSE_ERROR warmup_err = run_classifier(&warmup_signal, &warmup_result, false);
-        if (warmup_err == EI_IMPULSE_OK) {
-          Serial.println("[VOICE] FFT/DSP pre-allocated THANH CONG!");
-        } else {
-          Serial.printf("[VOICE] WARNING: Pre-alloc classifier error: %d\n", warmup_err);
-        }
-      }
-      Serial.printf("[MEM-DIAG] Sau pre-alloc: Free DRAM=%u, Largest DRAM block=%u\n",
-                    heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
-                    heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
-
-      // Audio Task: Core 0, Priority 10 (4KB stack đủ cho I2S read + convert)
-      BaseType_t audioResult = xTaskCreatePinnedToCore(
-          audioTask, "AudioTask", 4096, NULL, 10, NULL, 0);
-      if (audioResult != pdPASS) {
-        Serial.println("[VOICE] ERROR: AudioTask creation FAILED!");
-      } else {
-        Serial.printf("[MEM] Free heap sau AudioTask: %u bytes\n", ESP.getFreeHeap());
-      }
-
-      // Inference Task: Core 1, Priority 5 (16KB stack)
-      BaseType_t inferResult = xTaskCreatePinnedToCore(
-          inferenceTask, "InferTask", 16384, NULL, 5, NULL, 1);
-      if (inferResult != pdPASS) {
-        Serial.println("[VOICE] ERROR: InferTask creation FAILED!");
-        Serial.printf("[MEM] Free heap: %u bytes\n", ESP.getFreeHeap());
-      } else {
-        Serial.printf("[MEM] Free heap sau InferTask: %u bytes\n", ESP.getFreeHeap());
-      }
-
       if (audioResult == pdPASS && inferResult == pdPASS) {
-        Serial.println("[VOICE] Audio + Inference tasks created THANH CONG.");
+        voiceSystemReady = true; // Bật cờ cho phép các task hoạt động
+        Serial.println("[VOICE] Audio + Inference tasks created THANH CONG. Hệ thống bắt đầu thu âm.");
       }
     }
   }
