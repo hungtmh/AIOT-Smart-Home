@@ -63,6 +63,9 @@ const char* PUMP_STATE_TOPIC    = "aiot/esp32-s3/device/pump/state";
 // --- Telemetry: Gửi dữ liệu cảm biến lên Web/Backend ---
 const char* TELEMETRY_TOPIC     = "aiot/esp32-s3/telemetry";
 
+// --- Voice Command: Gửi lệnh giọng nói lên Web/Backend ---
+const char* VOICE_COMMAND_TOPIC = "aiot/esp32-s3/voice/command";
+
 // --- MQ-2 Alert: Cảnh báo khí gas & cài đặt ngưỡng từ xa ---
 const char* MQ2_ALERT_TOPIC         = "aiot/esp32-s3/alert/smoke";
 const char* MQ2_THRESHOLD_CMD_TOPIC = "aiot/esp32-s3/device/mq2/threshold/set";
@@ -155,6 +158,7 @@ static volatile bool      voiceSystemReady = false;
 // Voice command truyền từ Inference Task sang loop() — thread-safe
 // 0 = không có lệnh, 1 = mo_cua, 2 = dong_cua, 3 = mo_den, 4 = tat_den
 static volatile int       voiceCommand = 0;
+static volatile float     voiceConfidence = 0.0f;
 
 // Cooldown chống lặp lệnh voice (tránh cùng 1 lệnh trigger liên tục)
 static constexpr unsigned long VOICE_COOLDOWN_MS = 2000;
@@ -653,10 +657,10 @@ static void inferenceTask(void* pvParameters) {
         Serial.printf("[VOICE] >>> ĐÃ VƯỢT NGƯỠNG (%.1f%%) - Nhận diện: '%s'\n", maxScore * 100.0f, label);
 
         // Map label → voiceCommand (dispatch bởi loop() trên cùng Core 1)
-        if      (strcmp(label, "mo_cua")   == 0) { voiceCommand = 1; Serial.println("[VOICE] Khớp lệnh: mo_cua -> voiceCommand = 1"); }
-        else if (strcmp(label, "dong_cua") == 0) { voiceCommand = 2; Serial.println("[VOICE] Khớp lệnh: dong_cua -> voiceCommand = 2"); }
-        else if (strcmp(label, "mo_den")   == 0) { voiceCommand = 3; Serial.println("[VOICE] Khớp lệnh: mo_den -> voiceCommand = 3"); }
-        else if (strcmp(label, "tat_den")  == 0) { voiceCommand = 4; Serial.println("[VOICE] Khớp lệnh: tat_den -> voiceCommand = 4"); }
+        if      (strcmp(label, "mo_cua")   == 0) { voiceCommand = 1; voiceConfidence = maxScore; Serial.println("[VOICE] Khớp lệnh: mo_cua -> voiceCommand = 1"); }
+        else if (strcmp(label, "dong_cua") == 0) { voiceCommand = 2; voiceConfidence = maxScore; Serial.println("[VOICE] Khớp lệnh: dong_cua -> voiceCommand = 2"); }
+        else if (strcmp(label, "mo_den")   == 0) { voiceCommand = 3; voiceConfidence = maxScore; Serial.println("[VOICE] Khớp lệnh: mo_den -> voiceCommand = 3"); }
+        else if (strcmp(label, "tat_den")  == 0) { voiceCommand = 4; voiceConfidence = maxScore; Serial.println("[VOICE] Khớp lệnh: tat_den -> voiceCommand = 4"); }
         else { Serial.printf("[VOICE] LỖI: Nhãn '%s' không khớp với bất kỳ chữ nào trong code!\n", label); }
       } else {
         Serial.printf("[VOICE-DEBUG] Bị bỏ qua do chưa hết thời gian chờ chống nhiễu (Cooldown).\n");
@@ -970,10 +974,12 @@ void loop() {
   // tránh race condition vì PubSubClient KHÔNG thread-safe.
   if (voiceCommand != 0) {
     int cmd = voiceCommand;
+    float conf = voiceConfidence;
     voiceCommand = 0;  // Clear trước khi xử lý
     
     Serial.printf("\n[LOOP-DEBUG] Đã bắt được lệnh voiceCommand = %d từ hàm loop(). Đang thực thi phần cứng...\n", cmd);
 
+    char payload[128];
     switch (cmd) {
       case 1:  // mo_cua
         if (!servoState) {

@@ -46,11 +46,6 @@ function mergeDeviceState(states, nextState) {
 export function RealtimeProvider({ session, children }) {
   const [deviceStates, setDeviceStates] = useState([]);
   const [telemetry, setTelemetry] = useState(null);
-  const [fireAlert, setFireAlert] = useState(null);
-  const [connectionState, setConnectionState] = useState("connecting");
-  const [error, setError] = useState("");
-  const [deviceStates, setDeviceStates] = useState([]);
-  const [telemetry, setTelemetry] = useState(null);
   const [connectionState, setConnectionState] = useState("connecting");
   const [error, setError] = useState("");
   const [fireAlert, setFireAlert] = useState(null);
@@ -59,6 +54,27 @@ export function RealtimeProvider({ session, children }) {
     setDeviceStates((currentStates) =>
       mergeDeviceState(currentStates, nextState),
     );
+  }, []);
+
+  const loadLatestFireAlert = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/fire-alert/latest`);
+
+      if (response.status === 204) {
+        setFireAlert(null);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Cannot load latest fire alert");
+      }
+
+      const data = await response.json();
+
+      setFireAlert(data);
+    } catch (error) {
+      console.error("Failed to load latest fire alert:", error);
+    }
   }, []);
 
   useEffect(() => {
@@ -79,6 +95,7 @@ export function RealtimeProvider({ session, children }) {
       setConnectionState("reconnecting");
       reconnectTimer = window.setTimeout(() => {
         reconnectTimer = null;
+        loadLatestFireAlert();
         connect();
       }, delay);
     }
@@ -143,15 +160,26 @@ export function RealtimeProvider({ session, children }) {
       });
     }
 
+    loadLatestFireAlert();
     connect();
 
     return () => {
       stopped = true;
-      if (reconnectTimer) window.clearTimeout(reconnectTimer);
-      if (socket && socket.readyState < WebSocket.CLOSING)
+
+      if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+      }
+
+      if (socket && socket.readyState < WebSocket.CLOSING) {
         socket.close(1000, "Client closed");
+      }
     };
-  }, [session?.access_token, updateDeviceState]);
+  }, [session?.access_token, updateDeviceState, loadLatestFireAlert]);
+
+  const clearFireAlert = () => {
+    console.log("clear");
+    setFireAlert(null);
+  };
 
   const value = useMemo(
     () => ({
@@ -160,6 +188,7 @@ export function RealtimeProvider({ session, children }) {
       connectionState,
       error,
       fireAlert,
+      clearFireAlert,
       updateDeviceState,
     }),
     [
@@ -168,6 +197,7 @@ export function RealtimeProvider({ session, children }) {
       error,
       fireAlert,
       telemetry,
+      clearFireAlert,
       updateDeviceState,
     ],
   );

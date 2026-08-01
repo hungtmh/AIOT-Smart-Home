@@ -7,6 +7,7 @@ import com.aiot.smarthome.model.DeviceDefinition;
 import com.aiot.smarthome.service.DeviceCatalog;
 import com.aiot.smarthome.service.DeviceService;
 import com.aiot.smarthome.service.TelemetryService;
+import com.aiot.smarthome.repository.HistoryRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +33,7 @@ public class MqttCommandPublisher implements MqttCallback {
   private final DeviceCatalog deviceCatalog;
   private final DeviceService deviceService;
   private final TelemetryService telemetryService;
+  private final HistoryRepository historyRepository;
   private final ObjectMapper objectMapper;
   private MqttClient client;
 
@@ -40,11 +42,13 @@ public class MqttCommandPublisher implements MqttCallback {
       DeviceCatalog deviceCatalog,
       @Lazy DeviceService deviceService,
       TelemetryService telemetryService,
+      HistoryRepository historyRepository,
       ObjectMapper objectMapper) {
     this.properties = properties;
     this.deviceCatalog = deviceCatalog;
     this.deviceService = deviceService;
     this.telemetryService = telemetryService;
+    this.historyRepository = historyRepository;
     this.objectMapper = objectMapper;
   }
 
@@ -60,7 +64,9 @@ public class MqttCommandPublisher implements MqttCallback {
         client.subscribe(stateTopic(device.id()), 1);
       }
       client.subscribe(mqtt.telemetryTopic(), 1);
-      logger.info("Connected to MQTT broker {} and subscribed to device state + telemetry topics", mqtt.brokerUri());
+      client.subscribe(mqtt.voiceTopic(), 1);
+      client.subscribe(mqtt.alertTopic(), 1);
+      logger.info("Connected to MQTT broker {} and subscribed to device state, telemetry, voice, and alert topics", mqtt.brokerUri());
     } catch (Exception exception) {
       logger.warn("MQTT is not connected yet: {}", exception.getMessage());
     }
@@ -105,6 +111,16 @@ public class MqttCommandPublisher implements MqttCallback {
     String payload = new String(message.getPayload(), StandardCharsets.UTF_8).trim();
     if (properties.mqtt().telemetryTopic().equals(topic)) {
       handleTelemetryPayload(payload);
+      return;
+    }
+
+    if (properties.mqtt().voiceTopic().equals(topic)) {
+      handleVoicePayload(payload);
+      return;
+    }
+
+    if (properties.mqtt().alertTopic().equals(topic)) {
+      handleAlertPayload(payload);
       return;
     }
 
@@ -176,6 +192,35 @@ public class MqttCommandPublisher implements MqttCallback {
       logger.info("Received telemetry temperature={} humidity={} smokePpm={}", temperature, humidity, smokePpm);
     } catch (Exception exception) {
       logger.warn("Ignoring invalid telemetry payload '{}': {}", payload, exception.getMessage());
+    }
+  }
+
+  private void handleVoicePayload(String payload) {
+    try {
+      JsonNode json = objectMapper.readTree(payload);
+      String recognizedText = json.path("recognizedText").asText();
+      String mappedDevice = json.path("mappedDevice").asText();
+      String action = json.path("action").asText();
+      double confidence = json.path("confidence").asDouble();
+      
+      historyRepository.saveVoiceCommand(recognizedText, mappedDevice, action, confidence, "Accepted");
+      logger.info("Saved voice command: '{}'", recognizedText);
+    } catch (Exception exception) {
+      logger.warn("Ignoring invalid voice payload '{}': {}", payload, exception.getMessage());
+    }
+  }
+
+  private void handleAlertPayload(String payload) {
+    try {
+      JsonNode json = objectMapper.readTree(payload);
+      String alertType = json.path("alert").asText();
+      String smokePpm = json.path("smokePpm").asText();
+      String threshold = json.path("threshold").asText();
+      
+      historyRepository.saveAlert(alertType, smokePpm, threshold, "Logged", "Pending");
+      logger.info("Saved alert: '{}' with value {}", alertType, smokePpm);
+    } catch (Exception exception) {
+      logger.warn("Ignoring invalid alert payload '{}': {}", payload, exception.getMessage());
     }
   }
 
