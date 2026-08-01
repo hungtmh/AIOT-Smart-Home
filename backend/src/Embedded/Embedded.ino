@@ -32,8 +32,8 @@
 // =============================================================================
 //  CẤU HÌNH WIFI
 // =============================================================================
-const char* WIFI_SSID     = "Huy Duy";
-const char* WIFI_PASSWORD  = "Vietnam060512";
+const char* WIFI_SSID     = "HCMUS-Phonghoc";
+const char* WIFI_PASSWORD  = "khtn@phonghoc";
 
 // =============================================================================
 //  CẤU HÌNH MQTT BROKER (HIVEMQ CLOUD - TLS 8883)
@@ -134,7 +134,7 @@ bool  filterFilled = false;
 // =============================================================================
 //  VOICE RECOGNITION – EDGE IMPULSE
 // =============================================================================
-constexpr float CONFIDENCE_THRESHOLD = 0.70f;
+constexpr float CONFIDENCE_THRESHOLD = 0.30f;
 
 // Kích thước block Audio Task gửi mỗi lần (0.25 giây = 4000 samples @ 16kHz)
 static constexpr int      AUDIO_BLOCK_SAMPLES = 4000;
@@ -143,9 +143,9 @@ static constexpr size_t   AUDIO_BLOCK_BYTES   = AUDIO_BLOCK_SAMPLES * sizeof(int
 // Circular buffer cho Inference Task (1 giây = 16000 samples)
 static constexpr int      INFERENCE_WINDOW_SAMPLES = EI_CLASSIFIER_RAW_SAMPLE_COUNT; // 16000
 
-// Ring Buffer FreeRTOS (2 blocks đủ cho pipeline, giảm từ 3 để tiết kiệm 8KB DRAM)
+// Ring Buffer FreeRTOS (1.1 blocks - tiết kiệm RAM tối đa cho MFCC allocation)
 static RingbufHandle_t    audioRingBuf = NULL;
-static constexpr size_t   RING_BUF_SIZE = AUDIO_BLOCK_BYTES * 2;
+static constexpr size_t   RING_BUF_SIZE = AUDIO_BLOCK_BYTES + 1024;
 
 // Circular buffer lưu 1 giây audio cho inference
 static int16_t            inferenceBuffer[INFERENCE_WINDOW_SAMPLES];
@@ -162,7 +162,7 @@ static volatile float     voiceConfidence = 0.0f;
 
 // Cooldown chống lặp lệnh voice (tránh cùng 1 lệnh trigger liên tục)
 static constexpr unsigned long VOICE_COOLDOWN_MS = 2000;
-static unsigned long      lastVoiceActionMs = 0;
+static volatile unsigned long  lastVoiceActionMs = 0;
 
 // =============================================================================
 //  ĐỐI TƯỢNG PHẦN CỨNG
@@ -424,7 +424,7 @@ static int i2s_mic_init(uint32_t sampling_rate) {
     .communication_format = I2S_COMM_FORMAT_I2S,
     .intr_alloc_flags     = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count        = 4,
-    .dma_buf_len          = 1024,
+    .dma_buf_len          = 512,
     .use_apll             = false,
     .tx_desc_auto_clear   = false,
     .fixed_mclk           = -1,
@@ -505,9 +505,9 @@ static void audioTask(void* pvParameters) {
     int samplesRead = bytesRead / sizeof(int32_t);
 
     // Chuyển 32-bit → 16-bit: INMP441 output 24-bit MSB-aligned trong 32-bit frame
-    // Dịch phải 14 bit để scale xuống 16-bit range mà không khuếch đại nhiễu
+    // Dịch phải 16 bit để lấy 16-bit chuẩn, tránh bị tràn (wrap-around) gây nhiễu
     for (int i = 0; i < samplesRead; i++) {
-      pcmBlock[i] = (int16_t)(i2sRawBuf[i] >> 14);
+      pcmBlock[i] = (int16_t)(i2sRawBuf[i] >> 16);
     }
 
     // --- Log kiểm tra microphone (1 giây / lần) ---
@@ -596,13 +596,15 @@ static void inferenceTask(void* pvParameters) {
     // === Kiểm tra DRAM trước khi chạy classifier ===
     // Nếu MQTT đang handshake TLS (chiếm ~40KB DRAM tạm), chờ để tránh crash
     if (mqttConnecting) {
+      Serial.println("[VOICE-DEBUG] Bỏ qua chạy AI do MQTT đang kết nối...");
       vTaskDelay(pdMS_TO_TICKS(200));
       continue;
     }
 
     uint32_t largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    if (largestBlock < 25000) {
-      // Không đủ DRAM cho FFT/MFCC, chờ rồi thử lại
+    if (largestBlock < 4000) {
+      // Không đủ DRAM tạm cho classifier, chờ rồi thử lại
+      Serial.printf("[VOICE-DEBUG] Bỏ qua chạy AI do RAM không đủ (%d bytes)...\n", largestBlock);
       vTaskDelay(pdMS_TO_TICKS(500));
       continue;
     }
@@ -613,7 +615,10 @@ static void inferenceTask(void* pvParameters) {
     signal.get_data = &inferenceSignalGetData;
 
     ei_impulse_result_t result = { 0 };
+    
+    Serial.printf("[VOICE-DEBUG] Bắt đầu gọi run_classifier() (DRAM block: %u bytes)...\n", largestBlock);
     EI_IMPULSE_ERROR err = run_classifier(&signal, &result, false);
+    Serial.println("[VOICE-DEBUG] Thư viện run_classifier() đã chạy xong!");
 
     if (err != EI_IMPULSE_OK) {
       static int classifierErrorCount = 0;
@@ -640,17 +645,14 @@ static void inferenceTask(void* pvParameters) {
     }
 
     // --- DEBUG LOG: IN RA TẤT CẢ CÁC LẦN NHẬN DIỆN ---
-    if (bestIdx >= 0 && maxScore > 0.3f) { // Chỉ in ra khi điểm > 30% để đỡ trôi log
+    if (bestIdx >= 0) { // In ra tất cả các lần nhận diện để debug
       Serial.printf("[VOICE-DEBUG] Nhãn dự đoán cao nhất: '%s' với điểm số: %.1f%%\n", 
                     result.classification[bestIdx].label, maxScore * 100.0f);
     }
 
     // Kiểm tra threshold + cooldown
     if (maxScore >= CONFIDENCE_THRESHOLD && bestIdx >= 0) {
-      unsigned long now = millis();
-      if (now - lastVoiceActionMs >= VOICE_COOLDOWN_MS) {
-        lastVoiceActionMs = now;
-
+      if (millis() - lastVoiceActionMs >= VOICE_COOLDOWN_MS) {
         const char* label = result.classification[bestIdx].label;
         Serial.printf("[VOICE] >>> ĐÃ VƯỢT NGƯỠNG (%.1f%%) - Nhận diện: '%s'\n", maxScore * 100.0f, label);
 
@@ -663,8 +665,8 @@ static void inferenceTask(void* pvParameters) {
       } else {
         Serial.printf("[VOICE-DEBUG] Bị bỏ qua do chưa hết thời gian chờ chống nhiễu (Cooldown).\n");
       }
-    } else if (bestIdx >= 0 && maxScore > 0.3f) {
-      Serial.printf("[VOICE-DEBUG] Bị bỏ qua do điểm số (%.1f%%) < ngưỡng %d%%\n", maxScore * 100.0f, (int)(CONFIDENCE_THRESHOLD * 100));
+    } else if (bestIdx >= 0) {
+      // Đã in ở trên nên không cần in lại báo bị bỏ qua do điểm số thấp nữa, để tránh trôi log
     }
 
     // Yield cho các task khác trên Core 1 (loop, MQTT)
@@ -897,41 +899,41 @@ void setup() {
                 heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
                 heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
 
-  // 1. Tạo Inference Task (Core 1, 16KB stack) ngay sau FFT pre-alloc
-  // để chiếm khối 32.7KB DRAM liên tục trước khi I2S/RingBuf cắt nhỏ RAM.
+  // 1. Tạo Ring Buffer FreeRTOS TRƯỚC (khi DRAM liên tục còn lớn nhất ~30.7KB)
+  audioRingBuf = xRingbufferCreate(RING_BUF_SIZE, RINGBUF_TYPE_BYTEBUF);
+  if (audioRingBuf == NULL) {
+    Serial.println("[VOICE] ERROR: Ring Buffer creation FAILED! (Het RAM)");
+  } else {
+    Serial.printf("[MEM] Free heap sau RingBuf creation: %u bytes (Contiguous DRAM: %u bytes)\n",
+                  ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+  }
+
+  // 2. Tạo Inference Task (Core 1, 12KB stack)
   BaseType_t inferResult = xTaskCreatePinnedToCore(
-      inferenceTask, "InferTask", 16384, NULL, 5, NULL, 1);
+      inferenceTask, "InferTask", 12288, NULL, 5, NULL, 1);
   if (inferResult != pdPASS) {
     Serial.println("[VOICE] ERROR: InferTask creation FAILED!");
   } else {
     Serial.printf("[MEM] Free heap sau InferTask: %u bytes\n", ESP.getFreeHeap());
   }
 
-  // 2. Tạo Audio Task (Core 0, 4KB stack)
+  // 3. Tạo Audio Task (Core 0, 3KB stack)
   BaseType_t audioResult = xTaskCreatePinnedToCore(
-      audioTask, "AudioTask", 4096, NULL, 10, NULL, 0);
+      audioTask, "AudioTask", 3072, NULL, 10, NULL, 0);
   if (audioResult != pdPASS) {
     Serial.println("[VOICE] ERROR: AudioTask creation FAILED!");
   } else {
     Serial.printf("[MEM] Free heap sau AudioTask: %u bytes\n", ESP.getFreeHeap());
   }
 
-  // 3. Khởi tạo I2S hardware
+  // 4. Khởi tạo I2S hardware
   if (i2s_mic_init(EI_CLASSIFIER_FREQUENCY) != 0) {
     Serial.println("[VOICE] ERROR: I2S init failed! Voice recognition disabled.");
   } else {
     Serial.printf("[MEM] Free heap sau I2S init: %u bytes\n", ESP.getFreeHeap());
-
-    // 4. Tạo Ring Buffer FreeRTOS
-    audioRingBuf = xRingbufferCreate(RING_BUF_SIZE, RINGBUF_TYPE_BYTEBUF);
-    if (audioRingBuf == NULL) {
-      Serial.println("[VOICE] ERROR: Ring Buffer creation FAILED! (Het RAM)");
-    } else {
-      Serial.printf("[MEM] Free heap sau RingBuf: %u bytes\n", ESP.getFreeHeap());
-      if (audioResult == pdPASS && inferResult == pdPASS) {
-        voiceSystemReady = true; // Bật cờ cho phép các task hoạt động
-        Serial.println("[VOICE] Audio + Inference tasks created THANH CONG. Hệ thống bắt đầu thu âm.");
-      }
+    if (audioRingBuf != NULL && audioResult == pdPASS && inferResult == pdPASS) {
+      voiceSystemReady = true; // Bật cờ cho phép các task hoạt động
+      Serial.println("[VOICE] Audio + Inference tasks + RingBuffer created THANH CONG. Hệ thống bắt đầu thu âm.");
     }
   }
 
@@ -980,28 +982,44 @@ void loop() {
     char payload[128];
     switch (cmd) {
       case 1:  // mo_cua
-        Serial.println("[VOICE] >>> MO CUA → Servo OPEN");
-        setServo(true);
-        snprintf(payload, sizeof(payload), "{\"recognizedText\":\"mo_cua\",\"mappedDevice\":\"servo\",\"action\":\"OPEN\",\"confidence\":%.2f}", conf * 100.0f);
-        mqtt.publish(VOICE_COMMAND_TOPIC, payload, false);
+        if (!servoState) {
+          Serial.println("[VOICE] >>> MO CUA → Servo OPEN");
+          setServo(true);  // Hàm setServo() đã tự động publishState(SERVO_STATE_TOPIC, true) lên MQTT
+          lastVoiceActionMs = millis();
+          Serial.println("[VOICE-PUB] Đã publish trạng thái Cửa (OPEN) lên Web/MQTT.");
+        } else {
+          Serial.println("[VOICE] >>> Cửa đã mở, bỏ qua lệnh MO CUA");
+        }
         break;
       case 2:  // dong_cua
-        Serial.println("[VOICE] >>> DONG CUA → Servo CLOSE");
-        setServo(false);
-        snprintf(payload, sizeof(payload), "{\"recognizedText\":\"dong_cua\",\"mappedDevice\":\"servo\",\"action\":\"CLOSE\",\"confidence\":%.2f}", conf * 100.0f);
-        mqtt.publish(VOICE_COMMAND_TOPIC, payload, false);
+        if (servoState) {
+          Serial.println("[VOICE] >>> DONG CUA → Servo CLOSE");
+          setServo(false); // Hàm setServo() đã tự động publishState(SERVO_STATE_TOPIC, false) lên MQTT
+          lastVoiceActionMs = millis();
+          Serial.println("[VOICE-PUB] Đã publish trạng thái Cửa (CLOSE) lên Web/MQTT.");
+        } else {
+          Serial.println("[VOICE] >>> Cửa đã đóng, bỏ qua lệnh DONG CUA");
+        }
         break;
       case 3:  // mo_den
-        Serial.println("[VOICE] >>> MO DEN → LED ON");
-        setLed(true);
-        snprintf(payload, sizeof(payload), "{\"recognizedText\":\"mo_den\",\"mappedDevice\":\"led\",\"action\":\"ON\",\"confidence\":%.2f}", conf * 100.0f);
-        mqtt.publish(VOICE_COMMAND_TOPIC, payload, false);
+        if (!ledState) {
+          Serial.println("[VOICE] >>> MO DEN → LED ON");
+          setLed(true);    // Hàm setLed() đã tự động publishState(LED_STATE_TOPIC, true) lên MQTT
+          lastVoiceActionMs = millis();
+          Serial.println("[VOICE-PUB] Đã publish trạng thái Đèn (ON) lên Web/MQTT.");
+        } else {
+          Serial.println("[VOICE] >>> Đèn đã bật, bỏ qua lệnh MO DEN");
+        }
         break;
       case 4:  // tat_den
-        Serial.println("[VOICE] >>> TAT DEN → LED OFF");
-        setLed(false);
-        snprintf(payload, sizeof(payload), "{\"recognizedText\":\"tat_den\",\"mappedDevice\":\"led\",\"action\":\"OFF\",\"confidence\":%.2f}", conf * 100.0f);
-        mqtt.publish(VOICE_COMMAND_TOPIC, payload, false);
+        if (ledState) {
+          Serial.println("[VOICE] >>> TAT DEN → LED OFF");
+          setLed(false);   // Hàm setLed() đã tự động publishState(LED_STATE_TOPIC, false) lên MQTT
+          lastVoiceActionMs = millis();
+          Serial.println("[VOICE-PUB] Đã publish trạng thái Đèn (OFF) lên Web/MQTT.");
+        } else {
+          Serial.println("[VOICE] >>> Đèn đã tắt, bỏ qua lệnh TAT DEN");
+        }
         break;
     }
 
