@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -29,59 +28,14 @@ public class FireAlertService {
     }
 
 
+    public FireAlert getLatest(){
 
-    // Python gọi vào đây để lưu cảnh báo cháy
-    public FireAlert createAlert(
-            String deviceId,
-            String imagePath,
-            Double confidence
-    ){
+        return repository.findLatest()
+                .orElse(null);
 
-
-        FireAlert alert = new FireAlert(
-
-                null,
-
-                deviceId,
-
-                imagePath,
-
-                confidence,
-
-                LocalDateTime.now(),
-
-                "FIRE"
-
-        );
-
-
-        FireAlert saved = repository.save(alert);
-
-
-
-        // Convert Entity -> DTO trước khi gửi websocket
-        FireAlertResponse response = new FireAlertResponse(
-                saved.getId(),
-                saved.getDeviceId(),
-                saved.getImagePath(),
-                saved.getConfidence(),
-                saved.getDetectedAt(),
-                saved.getStatus()
-        );
-
-
-        // đẩy realtime qua websocket
-        realtimeHub.broadcastFireAlert(response);
-
-
-
-        return saved;
     }
 
 
-
-
-    // lấy toàn bộ lịch sử cháy
     public List<FireAlert> getAlerts(){
 
         return repository.findAll();
@@ -89,18 +43,40 @@ public class FireAlertService {
     }
 
 
+    public FireAlert createAlert(
+            String deviceId,
+            String imagePath,
+            Double confidence
+    ){
+
+        FireAlert alert = new FireAlert(
+                null,
+                deviceId,
+                imagePath,
+                confidence,
+                LocalDateTime.now(),
+                "FIRE"
+        );
 
 
-    // lấy cảnh báo mới nhất
-    public FireAlert getLatest(){
-
-        Optional<FireAlert> latest =
-                repository.findLatest();
+        FireAlert saved = repository.save(alert);
 
 
-        return latest.orElse(null);
+        FireAlertResponse response =
+                new FireAlertResponse(
+                        saved.getId(),
+                        saved.getDeviceId(),
+                        saved.getImagePath(),
+                        saved.getConfidence(),
+                        saved.getDetectedAt(),
+                        saved.getStatus()
+                );
 
+
+        realtimeHub.broadcastFireAlert(response);
+
+
+        return saved;
     }
-
 
 }

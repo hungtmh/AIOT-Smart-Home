@@ -47,7 +47,8 @@ public class SecurityConfig {
           if (jwtEnabled) {
 
               authorize.requestMatchers(
-                  "/api/fire-alert"
+                  "/api/fire-alert",
+                  "/api/fire-alert/latest"
               ).permitAll();
 
               authorize.requestMatchers("/api/**")

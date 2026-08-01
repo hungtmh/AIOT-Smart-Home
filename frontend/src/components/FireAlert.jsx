@@ -63,7 +63,7 @@ export default function FireAlert() {
         </h2>
 
         <img
-          src={`${import.meta.env.VITE_API_URL}/uploads/${fireAlert.imagePath}`}
+          src={`${import.meta.env.VITE_API_URL}/upload/${fireAlert.imagePath}`}
           alt="Fire Detection"
           style={{
             width: "100%",

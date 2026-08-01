@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useRealtime } from "../realtime/RealtimeContext";
 import { commandDevice } from "../lib/api";
 import { icons } from "./icons";
@@ -5,7 +6,39 @@ import { icons } from "./icons";
 const { Flame, AlertTriangle, ShieldCheck, Power } = icons;
 
 function AlertPage() {
-  const { fireAlert } = useRealtime();
+  const { fireAlert: realtimeAlert } = useRealtime();
+
+  const [fireAlert, setFireAlert] = useState(null);
+
+  useEffect(() => {
+    async function loadLatestAlert() {
+      try {
+        const res = await fetch("http://localhost:8080/api/fire-alert/latest");
+
+        if (res.status === 204) {
+          setFireAlert(null);
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error("Failed to load latest fire alert");
+        }
+
+        const data = await res.json();
+        setFireAlert(data);
+      } catch (error) {
+        console.error("Failed to load latest fire alert:", error);
+      }
+    }
+
+    loadLatestAlert();
+  }, []);
+
+  useEffect(() => {
+    if (realtimeAlert) {
+      setFireAlert(realtimeAlert);
+    }
+  }, [realtimeAlert]);
 
   async function handleTurnOnPump() {
     try {

@@ -56,6 +56,27 @@ export function RealtimeProvider({ session, children }) {
     );
   }, []);
 
+  const loadLatestFireAlert = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/fire-alert/latest`);
+
+      if (response.status === 204) {
+        setFireAlert(null);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Cannot load latest fire alert");
+      }
+
+      const data = await response.json();
+
+      setFireAlert(data);
+    } catch (error) {
+      console.error("Failed to load latest fire alert:", error);
+    }
+  }, []);
+
   useEffect(() => {
     const token = session?.access_token;
     if (!token) return undefined;
@@ -74,6 +95,7 @@ export function RealtimeProvider({ session, children }) {
       setConnectionState("reconnecting");
       reconnectTimer = window.setTimeout(() => {
         reconnectTimer = null;
+        loadLatestFireAlert();
         connect();
       }, delay);
     }
@@ -138,15 +160,26 @@ export function RealtimeProvider({ session, children }) {
       });
     }
 
+    loadLatestFireAlert();
     connect();
 
     return () => {
       stopped = true;
-      if (reconnectTimer) window.clearTimeout(reconnectTimer);
-      if (socket && socket.readyState < WebSocket.CLOSING)
+
+      if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+      }
+
+      if (socket && socket.readyState < WebSocket.CLOSING) {
         socket.close(1000, "Client closed");
+      }
     };
-  }, [session?.access_token, updateDeviceState]);
+  }, [session?.access_token, updateDeviceState, loadLatestFireAlert]);
+
+  const clearFireAlert = () => {
+    console.log("clear");
+    setFireAlert(null);
+  };
 
   const value = useMemo(
     () => ({
@@ -155,6 +188,7 @@ export function RealtimeProvider({ session, children }) {
       connectionState,
       error,
       fireAlert,
+      clearFireAlert,
       updateDeviceState,
     }),
     [
@@ -163,6 +197,7 @@ export function RealtimeProvider({ session, children }) {
       error,
       fireAlert,
       telemetry,
+      clearFireAlert,
       updateDeviceState,
     ],
   );
