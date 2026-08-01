@@ -7,6 +7,7 @@ import AlertPage from "./components/AlertPage";
 import { icons } from "./components/icons";
 import LoginPage from "./components/LoginPage";
 import SettingsPage from "./components/SettingsPage";
+import FireAlert from "./components/FireAlert";
 import Sidebar from "./components/Sidebar";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import { RealtimeProvider } from "./realtime/RealtimeProvider";
