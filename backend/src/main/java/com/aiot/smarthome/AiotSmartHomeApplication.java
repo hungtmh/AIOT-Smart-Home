@@ -39,6 +39,8 @@ public class AiotSmartHomeApplication {
     setSpringProperty(env, "aiot.mqtt.command-topic-pattern", "MQTT_COMMAND_TOPIC_PATTERN");
     setSpringProperty(env, "aiot.mqtt.state-topic-pattern", "MQTT_STATE_TOPIC_PATTERN");
     setSpringProperty(env, "aiot.mqtt.telemetry-topic", "MQTT_TELEMETRY_TOPIC");
+    setSpringProperty(env, "aiot.mqtt.voice-topic", "MQTT_VOICE_TOPIC");
+    setSpringProperty(env, "aiot.mqtt.alert-topic", "MQTT_ALERT_TOPIC");
   }
 
   private static Map<String, Object> loadLocalEnv(Map<String, String> env) {
@@ -56,6 +58,8 @@ public class AiotSmartHomeApplication {
     putIfPresent(properties, "aiot.mqtt.command-topic-pattern", env, "MQTT_COMMAND_TOPIC_PATTERN");
     putIfPresent(properties, "aiot.mqtt.state-topic-pattern", env, "MQTT_STATE_TOPIC_PATTERN");
     putIfPresent(properties, "aiot.mqtt.telemetry-topic", env, "MQTT_TELEMETRY_TOPIC");
+    putIfPresent(properties, "aiot.mqtt.voice-topic", env, "MQTT_VOICE_TOPIC");
+    putIfPresent(properties, "aiot.mqtt.alert-topic", env, "MQTT_ALERT_TOPIC");
 
     return properties;
   }
@@ -70,9 +74,9 @@ public class AiotSmartHomeApplication {
   private static Map<String, String> readEnvFile() {
     Path workingDirectory = Path.of("").toAbsolutePath();
     Path[] candidates = {
-      workingDirectory.resolve(".env"),
-      workingDirectory.resolve("backend/.env"),
-      workingDirectory.resolve("AIOT-Smart-Home/backend/.env")
+        workingDirectory.resolve(".env"),
+        workingDirectory.resolve("backend/.env"),
+        workingDirectory.resolve("AIOT-Smart-Home/backend/.env")
     };
 
     for (Path candidate : candidates) {
