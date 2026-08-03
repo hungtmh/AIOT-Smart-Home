@@ -1,6 +1,7 @@
 package com.aiot.smarthome.repository;
 
 import com.aiot.smarthome.dto.RecentActivityRow;
+import com.aiot.smarthome.dto.VoiceCommandResponse;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -8,6 +9,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -159,6 +161,41 @@ public class HistoryRepository {
     return countTable("voice_command_history");
   }
 
+  public Optional<VoiceCommandResponse> findLatestVoiceCommand() {
+    if (!databaseAvailable) {
+      return Optional.empty();
+    }
+
+    try {
+      ensureVoiceTable();
+
+      List<VoiceCommandResponse> list = jdbcTemplate.query(
+          """
+          select id, recognized_text, mapped_device, action, confidence, result, created_at
+          from voice_command_history
+          order by created_at desc
+          limit 1
+          """,
+          (rs, rowNum) -> {
+            OffsetDateTime createdAt = toOffsetDateTime(rs.getTimestamp("created_at"));
+            Double conf = rs.getObject("confidence") != null ? rs.getDouble("confidence") : null;
+            return new VoiceCommandResponse(
+                rs.getLong("id"),
+                rs.getString("recognized_text"),
+                rs.getString("mapped_device"),
+                rs.getString("action"),
+                conf,
+                rs.getString("result"),
+                createdAt);
+          });
+
+      return list.stream().findFirst();
+    } catch (DataAccessException exception) {
+      warnDatabaseFallback(exception);
+      return Optional.empty();
+    }
+  }
+
   public void saveVoiceCommand(String recognizedText, String mappedDevice, String action,
       Double confidence, String result) {
     if (!databaseAvailable) {
@@ -258,19 +295,23 @@ public class HistoryRepository {
 
       return jdbcTemplate.query(
           """
-          select device_id, image_path, confidence, detected_at, status
+          select device_id, confidence, detected_at, status
           from fire_alert
           order by detected_at desc
           limit ? offset ?
           """,
           (rs, rowNum) -> {
             OffsetDateTime detectedAt = toOffsetDateTime(rs.getTimestamp("detected_at"));
+            Double conf = rs.getObject("confidence") != null ? rs.getDouble("confidence") : null;
+            String confStr = "";
+            if (conf != null) {
+              confStr = conf <= 1.0 ? String.format("%.1f%%", conf * 100) : String.format("%.1f%%", conf);
+            }
             return List.of(
                 formatTime(detectedAt),
-                rs.getString("device_id"),
-                rs.getString("image_path") != null ? rs.getString("image_path") : "",
-                rs.getObject("confidence") != null ? rs.getDouble("confidence") + "" : "",
-                rs.getString("status") != null ? rs.getString("status") : "");
+                rs.getString("device_id") != null ? rs.getString("device_id") : "ESP32",
+                confStr,
+                rs.getString("status") != null ? rs.getString("status") : "FIRE");
           },
           size,
           page * size);
@@ -318,6 +359,7 @@ public class HistoryRepository {
       ensureControlLogsTable();
       ensureVoiceTable();
       ensureAlertTable();
+      ensureFireAlertTable();
 
       return jdbcTemplate.query(
           """
@@ -356,6 +398,15 @@ public class HistoryRepository {
             order by created_at desc
             limit ?
           )
+          union all
+          (
+            select detected_at as event_time,
+                   'Fire Alert: ' || device_id as event,
+                   'Status: ' || coalesce(status, 'FIRE') as detail
+            from fire_alert
+            order by detected_at desc
+            limit ?
+          )
           order by event_time desc
           limit ?
           """,
@@ -366,7 +417,7 @@ public class HistoryRepository {
                 rs.getString("event"),
                 rs.getString("detail"));
           },
-          limit, limit, limit, limit, limit);
+          limit, limit, limit, limit, limit, limit);
     } catch (DataAccessException exception) {
       warnDatabaseFallback(exception);
       return List.of();

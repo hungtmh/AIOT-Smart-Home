@@ -101,3 +101,15 @@ export function getTelemetryHistory(limit = 30) {
 export function getControlLogs(limit = 30) {
   return request(`/api/devices/history/logs?limit=${limit}`)
 }
+
+export function getLatestVoiceCommand() {
+  return request('/api/history/voice/latest')
+}
+
+export function recordVoiceCommand(voiceData) {
+  return request('/api/history/voice', {
+    method: 'POST',
+    body: JSON.stringify(voiceData),
+  })
+}
+

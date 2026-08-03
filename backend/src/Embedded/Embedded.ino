@@ -979,9 +979,16 @@ void loop() {
     
     Serial.printf("\n[LOOP-DEBUG] Đã bắt được lệnh voiceCommand = %d từ hàm loop(). Đang thực thi phần cứng...\n", cmd);
 
-    char payload[128];
+    char payload[160];
+    const char* text = "";
+    const char* device = "";
+    const char* action = "";
+
     switch (cmd) {
       case 1:  // mo_cua
+        text = "mo_cua";
+        device = "servo";
+        action = "OPEN";
         if (!servoState) {
           Serial.println("[VOICE] >>> MO CUA → Servo OPEN");
           setServo(true);  // Hàm setServo() đã tự động publishState(SERVO_STATE_TOPIC, true) lên MQTT
@@ -992,6 +999,9 @@ void loop() {
         }
         break;
       case 2:  // dong_cua
+        text = "dong_cua";
+        device = "servo";
+        action = "CLOSE";
         if (servoState) {
           Serial.println("[VOICE] >>> DONG CUA → Servo CLOSE");
           setServo(false); // Hàm setServo() đã tự động publishState(SERVO_STATE_TOPIC, false) lên MQTT
@@ -1002,6 +1012,9 @@ void loop() {
         }
         break;
       case 3:  // mo_den
+        text = "mo_den";
+        device = "led";
+        action = "ON";
         if (!ledState) {
           Serial.println("[VOICE] >>> MO DEN → LED ON");
           setLed(true);    // Hàm setLed() đã tự động publishState(LED_STATE_TOPIC, true) lên MQTT
@@ -1012,6 +1025,9 @@ void loop() {
         }
         break;
       case 4:  // tat_den
+        text = "tat_den";
+        device = "led";
+        action = "OFF";
         if (ledState) {
           Serial.println("[VOICE] >>> TAT DEN → LED OFF");
           setLed(false);   // Hàm setLed() đã tự động publishState(LED_STATE_TOPIC, false) lên MQTT
@@ -1021,6 +1037,14 @@ void loop() {
           Serial.println("[VOICE] >>> Đèn đã tắt, bỏ qua lệnh TAT DEN");
         }
         break;
+    }
+
+    if (strlen(text) > 0 && mqtt.connected()) {
+      snprintf(payload, sizeof(payload),
+               "{\"recognizedText\":\"%s\",\"mappedDevice\":\"%s\",\"action\":\"%s\",\"confidence\":%.2f}",
+               text, device, action, conf <= 1.0f ? (conf * 100.0f) : conf);
+      mqtt.publish(VOICE_COMMAND_TOPIC, payload);
+      Serial.printf("[VOICE-PUB] Đã publish voice command lên %s: %s\n", VOICE_COMMAND_TOPIC, payload);
     }
 
     // Kích hoạt telemetry theo logic hiện tại

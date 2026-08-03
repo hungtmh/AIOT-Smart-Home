@@ -3,7 +3,7 @@ package com.aiot.smarthome.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "aiot")
-public record AiotProperties(Auth auth, Cors cors, Mqtt mqtt) {
+public record AiotProperties(Auth auth, Cors cors, Mqtt mqtt, FireAlert fireAlert) {
   public record Auth(String jwtSecret, String jwksUri) {
   }
 
@@ -21,4 +21,8 @@ public record AiotProperties(Auth auth, Cors cors, Mqtt mqtt) {
       String voiceTopic,
       String alertTopic) {
   }
+
+  public record FireAlert(double pumpThreshold, int pumpAutoOffSeconds) {
+  }
 }
+

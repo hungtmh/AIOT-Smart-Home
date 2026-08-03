@@ -8,6 +8,7 @@ import com.aiot.smarthome.mqtt.MqttCommandPublisher;
 import com.aiot.smarthome.realtime.RealtimeHub;
 import com.aiot.smarthome.repository.DeviceRepository;
 import java.util.List;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,16 +19,19 @@ public class DeviceService {
   private final DeviceRepository repository;
   private final MqttCommandPublisher mqttCommandPublisher;
   private final RealtimeHub realtimeHub;
+  private final FireAlertService fireAlertService;
 
   public DeviceService(
       DeviceCatalog catalog,
       DeviceRepository repository,
       MqttCommandPublisher mqttCommandPublisher,
-      RealtimeHub realtimeHub) {
+      RealtimeHub realtimeHub,
+      @Lazy FireAlertService fireAlertService) {
     this.catalog = catalog;
     this.repository = repository;
     this.mqttCommandPublisher = mqttCommandPublisher;
     this.realtimeHub = realtimeHub;
+    this.fireAlertService = fireAlertService;
   }
 
   public List<DeviceStateResponse> getDeviceStates() {
@@ -43,6 +47,9 @@ public class DeviceService {
 
   public DeviceStateResponse commandDevice(String deviceId, boolean state) {
     DeviceDefinition device = requireDevice(deviceId);
+    if ("pump".equals(deviceId) && !state) {
+      fireAlertService.cancelScheduledPumpOff();
+    }
     DeviceState nextState = repository.setDesiredState(device, state);
     boolean mqttPublished = mqttCommandPublisher.publishDeviceState(device.id(), state);
     repository.addControlLog(device.id(), state, "web", mqttPublished ? "MQTT_PUBLISHED" : "MQTT_NOT_CONNECTED");

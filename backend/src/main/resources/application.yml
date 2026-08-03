@@ -27,3 +27,8 @@ aiot:
     command-topic-pattern: ${MQTT_COMMAND_TOPIC_PATTERN:aiot/esp32-s3/device/%s/set}
     state-topic-pattern: ${MQTT_STATE_TOPIC_PATTERN:aiot/esp32-s3/device/%s/state}
     telemetry-topic: ${MQTT_TELEMETRY_TOPIC:aiot/esp32-s3/telemetry}
+    voice-topic: ${MQTT_VOICE_TOPIC:aiot/esp32-s3/voice/command}
+    alert-topic: ${MQTT_ALERT_TOPIC:aiot/esp32-s3/alert/smoke}
+  fire-alert:
+    pump-threshold: ${FIRE_ALERT_PUMP_THRESHOLD:0.80}
+    pump-auto-off-seconds: ${FIRE_ALERT_PUMP_AUTO_OFF_SECONDS:60}

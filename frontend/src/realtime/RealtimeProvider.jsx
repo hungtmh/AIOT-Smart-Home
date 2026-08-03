@@ -49,6 +49,7 @@ export function RealtimeProvider({ session, children }) {
   const [connectionState, setConnectionState] = useState("connecting");
   const [error, setError] = useState("");
   const [fireAlert, setFireAlert] = useState(null);
+  const [latestVoiceCommand, setLatestVoiceCommand] = useState(null);
 
   const updateDeviceState = useCallback((nextState) => {
     setDeviceStates((currentStates) =>
@@ -70,10 +71,21 @@ export function RealtimeProvider({ session, children }) {
       }
 
       const data = await response.json();
-
       setFireAlert(data);
     } catch (error) {
       console.error("Failed to load latest fire alert:", error);
+    }
+  }, []);
+
+  const loadLatestVoiceCommand = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/history/voice/latest`);
+      if (response.status === 200) {
+        const data = await response.json();
+        setLatestVoiceCommand(data);
+      }
+    } catch (error) {
+      console.error("Failed to load latest voice command:", error);
     }
   }, []);
 
@@ -96,6 +108,7 @@ export function RealtimeProvider({ session, children }) {
       reconnectTimer = window.setTimeout(() => {
         reconnectTimer = null;
         loadLatestFireAlert();
+        loadLatestVoiceCommand();
         connect();
       }, delay);
     }
@@ -138,8 +151,13 @@ export function RealtimeProvider({ session, children }) {
           updateDeviceState(message.data);
         } else if (message.type === "TELEMETRY" && message.data) {
           setTelemetry(message.data);
-        } else if (message.type === "ALERT" && message.data) {
+        } else if (
+          (message.type === "ALERT" || message.type === "FIRE_ALERT") &&
+          message.data
+        ) {
           setFireAlert(message.data);
+        } else if (message.type === "VOICE_COMMAND" && message.data) {
+          setLatestVoiceCommand(message.data);
         } else if (message.type === "AUTH_ERROR") {
           allowReconnect = false;
           setConnectionState("error");
@@ -161,6 +179,7 @@ export function RealtimeProvider({ session, children }) {
     }
 
     loadLatestFireAlert();
+    loadLatestVoiceCommand();
     connect();
 
     return () => {
@@ -174,7 +193,7 @@ export function RealtimeProvider({ session, children }) {
         socket.close(1000, "Client closed");
       }
     };
-  }, [session?.access_token, updateDeviceState, loadLatestFireAlert]);
+  }, [session?.access_token, updateDeviceState, loadLatestFireAlert, loadLatestVoiceCommand]);
 
   const clearFireAlert = () => {
     console.log("clear");
@@ -189,6 +208,8 @@ export function RealtimeProvider({ session, children }) {
       error,
       fireAlert,
       clearFireAlert,
+      latestVoiceCommand,
+      setLatestVoiceCommand,
       updateDeviceState,
     }),
     [
@@ -196,8 +217,9 @@ export function RealtimeProvider({ session, children }) {
       deviceStates,
       error,
       fireAlert,
-      telemetry,
       clearFireAlert,
+      latestVoiceCommand,
+      telemetry,
       updateDeviceState,
     ],
   );

@@ -4,5 +4,6 @@ public record HistoryCountsResponse(
     long sensors,
     long controls,
     long voice,
-    long alerts) {
+    long alerts,
+    long fire) {
 }

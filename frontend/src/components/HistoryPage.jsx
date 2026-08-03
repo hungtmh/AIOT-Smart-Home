@@ -9,15 +9,17 @@ const TABS = [
   { id: 'controls', label: 'Controls', icon: 'SlidersHorizontal' },
   { id: 'voice', label: 'Voice', icon: 'Mic' },
   { id: 'alerts', label: 'Alerts', icon: 'BellRing' },
+  { id: 'fire', label: 'Fire Alerts', icon: 'Flame' },
 ]
 
 const PAGE_SIZE = 20
 
 function getBadgeClass(value) {
-  if (value === 'ON' || value === 'Accepted' || value === 'Success' || value === 'Resolved') return 'table-badge success'
+  if (typeof value !== 'string') return ''
+  if (value === 'ON' || value === 'Accepted' || value === 'Success' || value === 'Resolved' || value === 'Active' || value === 'CLEAR') return 'table-badge success'
   if (value === 'OFF' || value === 'Pending') return 'table-badge slate'
   if (value === 'Open' || value === 'Close' || value.includes('ppm') || value.includes('%')) return 'table-badge info'
-  if (value.includes('warning') || value.includes('fault') || value === 'Buzzer ON') return 'table-badge danger'
+  if (value === 'FIRE' || value.toLowerCase().includes('danger') || value.toLowerCase().includes('warning') || value.toLowerCase().includes('fault') || value === 'Buzzer ON') return 'table-badge danger'
   return ''
 }
 
@@ -29,7 +31,7 @@ function renderCell(value) {
 
 function HistoryPage({ activeTab, onTabChange }) {
   const [historyPage, setHistoryPage] = useState(null)
-  const [counts, setCounts] = useState({ sensors: 0, controls: 0, voice: 0, alerts: 0 })
+  const [counts, setCounts] = useState({ sensors: 0, controls: 0, voice: 0, alerts: 0, fire: 0 })
   const [currentPage, setCurrentPage] = useState(0)
   const [loading, setLoading] = useState(false)
 
@@ -113,7 +115,7 @@ function HistoryPage({ activeTab, onTabChange }) {
               aria-selected={activeTab === tab.id}
               onClick={() => onTabChange(tab.id)}
             >
-              <Icon size={17} aria-hidden="true" />
+              {Icon ? <Icon size={17} aria-hidden="true" /> : null}
               {tab.label}
               <span>{counts[tab.id] ?? 0}</span>
             </button>

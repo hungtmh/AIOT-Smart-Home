@@ -3,6 +3,7 @@ package com.aiot.smarthome.service;
 import com.aiot.smarthome.dto.HistoryCountsResponse;
 import com.aiot.smarthome.dto.HistoryPage;
 import com.aiot.smarthome.dto.RecentActivityRow;
+import com.aiot.smarthome.dto.VoiceCommandResponse;
 import com.aiot.smarthome.repository.HistoryRepository;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -51,6 +52,14 @@ public class HistoryService {
           size,
           repository.countAlerts());
 
+      case "fire", "fire-alerts", "fireAlerts" -> buildPage(
+          "Fire Alert History",
+          List.of("Time", "Device ID", "Confidence", "Status"),
+          repository.findFireAlerts(page, size),
+          page,
+          size,
+          repository.countFireAlerts());
+
       default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown history tab: " + tab);
     };
   }
@@ -60,11 +69,21 @@ public class HistoryService {
         repository.countSensors(),
         repository.countControls(),
         repository.countVoice(),
-        repository.countAlerts());
+        repository.countAlerts(),
+        repository.countFireAlerts());
   }
 
   public List<RecentActivityRow> getRecentActivity(int limit) {
     return repository.findRecentActivity(limit);
+  }
+
+  public VoiceCommandResponse getLatestVoiceCommand() {
+    return repository.findLatestVoiceCommand().orElse(null);
+  }
+
+  public void saveVoiceCommand(String recognizedText, String mappedDevice, String action,
+      Double confidence, String result) {
+    repository.saveVoiceCommand(recognizedText, mappedDevice, action, confidence, result);
   }
 
   public void saveAlert(String alertType, String sensorValue, String threshold, String actionTaken, String status) {

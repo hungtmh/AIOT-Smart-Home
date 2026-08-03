@@ -1,9 +1,18 @@
+import { API_BASE_URL } from "../lib/api";
 import { useRealtime } from "../realtime/RealtimeContext";
 
 export default function FireAlert() {
   const { fireAlert, clearFireAlert } = useRealtime();
 
   if (!fireAlert) return null;
+
+  const imageName = (fireAlert.imagePath || "")
+    .split(/[\\/]/)
+    .filter(Boolean)
+    .pop();
+  const imageUrl = imageName
+    ? `${API_BASE_URL}/uploads/${imageName}`
+    : null;
 
   return (
     <div
@@ -62,16 +71,35 @@ export default function FireAlert() {
           Fire Alert
         </h2>
 
-        <img
-          src={`${import.meta.env.VITE_API_URL}/upload/${fireAlert.imagePath}`}
-          alt="Fire Detection"
-          style={{
-            width: "100%",
-            borderRadius: "12px",
-            border: "1px solid #e5e7eb",
-            marginBottom: "20px",
-          }}
-        />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt="Fire Detection"
+            style={{
+              width: "100%",
+              borderRadius: "12px",
+              border: "1px solid #e5e7eb",
+              marginBottom: "20px",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              minHeight: "220px",
+              borderRadius: "12px",
+              border: "1px dashed #d1d5db",
+              marginBottom: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#6b7280",
+              background: "#f9fafb",
+            }}
+          >
+            No image available
+          </div>
+        )}
 
         <div
           style={{
@@ -102,6 +130,29 @@ export default function FireAlert() {
               : "Unknown"}
           </div>
         </div>
+
+        {fireAlert.confidence >= 0.8 && (
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "12px 16px",
+              background: "#fee2e2",
+              border: "1px solid #fca5a5",
+              borderRadius: "10px",
+              color: "#991b1b",
+              fontWeight: "600",
+              fontSize: "14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <span>🚨</span>
+            <span>
+              High confidence fire alert! Water Pump Relay has been <strong>AUTOMATICALLY ACTIVATED</strong> for 60 seconds.
+            </span>
+          </div>
+        )}
 
         <button
           onClick={clearFireAlert}

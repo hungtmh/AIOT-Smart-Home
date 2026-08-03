@@ -77,7 +77,7 @@ function formatUpdatedAt(value, fallback) {
 }
 
 function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
-  const { telemetry: latestTelemetry, deviceStates } = useRealtime()
+  const { telemetry: latestTelemetry, deviceStates, latestVoiceCommand } = useRealtime()
   const [recentActivity, setRecentActivity] = useState([])
   const liveSensors = buildLiveSensorCards(latestTelemetry, deviceStates)
 
@@ -118,19 +118,29 @@ function DashboardPage({ autoMode, lastUpdated, onToggleAutoMode }) {
       <MetricGrid sensors={liveSensors} />
 
       <section className="status-layout" aria-label="System status">
-
-
         <article className="panel">
           <div className="panel-title">
             <div>
               <Mic size={19} aria-hidden="true" />
               <h2>Latest Voice Command</h2>
             </div>
-            <span className="time-pill">0.8s</span>
+            <span className="time-pill">
+              {latestVoiceCommand?.confidence != null
+                ? `${Math.round(latestVoiceCommand.confidence <= 1.0 ? latestVoiceCommand.confidence * 100 : latestVoiceCommand.confidence)}% conf`
+                : 'Edge Impulse'}
+            </span>
           </div>
           <div className="voice-command">
-            <strong>Turn on LED light</strong>
-            <p>Mapped to LED relay, confidence 97%</p>
+            <strong>
+              {latestVoiceCommand?.recognizedText
+                ? `"${latestVoiceCommand.recognizedText}"`
+                : 'Chưa có lệnh giọng nói'}
+            </strong>
+            <p>
+              {latestVoiceCommand?.mappedDevice
+                ? `Thiết bị: ${latestVoiceCommand.mappedDevice.toUpperCase()} (${latestVoiceCommand.action ?? 'Action'}) • Kết quả: ${latestVoiceCommand.result ?? 'Accepted'}`
+                : 'Hệ thống đang lắng nghe lệnh từ micro INMP441...'}
+            </p>
           </div>
         </article>
       </section>

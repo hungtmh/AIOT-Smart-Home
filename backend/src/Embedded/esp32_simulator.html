@@ -766,7 +766,8 @@
       MQ2_THRESHOLD_STATE: 'aiot/esp32-s3/device/mq2/threshold/state',
 
       TELEMETRY:     'aiot/esp32-s3/telemetry',
-      MQ2_ALERT:     'aiot/esp32-s3/alert/smoke'
+      MQ2_ALERT:     'aiot/esp32-s3/alert/smoke',
+      VOICE_COMMAND: 'aiot/esp32-s3/voice/command'
     };
 
     let mqttClient = null;
@@ -1014,23 +1015,47 @@
 
     // Voice Command Dispatch (FreeRTOS Core 1 Task simulation)
     function triggerVoiceCommand(cmdId) {
+      let text = "", device = "", action = "", conf = 0.95;
       switch (cmdId) {
         case 1:
+          text = "mo_cua";
+          device = "servo";
+          action = "OPEN";
           addLog('voice', '[VOICE] >>> MO CUA -> Door Servo OPEN (150°)');
           setServo(true);
           break;
         case 2:
+          text = "dong_cua";
+          device = "servo";
+          action = "CLOSE";
           addLog('voice', '[VOICE] >>> DONG CUA -> Door Servo CLOSE (90°)');
           setServo(false);
           break;
         case 3:
+          text = "mo_den";
+          device = "led";
+          action = "ON";
           addLog('voice', '[VOICE] >>> MO DEN -> LED ON');
           setLed(true);
           break;
         case 4:
+          text = "tat_den";
+          device = "led";
+          action = "OFF";
           addLog('voice', '[VOICE] >>> TAT DEN -> LED OFF');
           setLed(false);
           break;
+      }
+
+      if (text && mqttClient && mqttClient.connected) {
+        const payload = JSON.stringify({
+          recognizedText: text,
+          mappedDevice: device,
+          action: action,
+          confidence: conf * 100
+        });
+        mqttClient.publish(TOPICS.VOICE_COMMAND, payload, { retain: false });
+        addLog('pub', `[VOICE-PUB] ${TOPICS.VOICE_COMMAND} -> ${payload}`);
       }
     }
 

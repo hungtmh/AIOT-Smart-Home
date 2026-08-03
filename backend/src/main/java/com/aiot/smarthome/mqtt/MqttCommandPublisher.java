@@ -3,7 +3,9 @@ package com.aiot.smarthome.mqtt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.aiot.smarthome.config.AiotProperties;
+import com.aiot.smarthome.dto.VoiceCommandResponse;
 import com.aiot.smarthome.model.DeviceDefinition;
+import com.aiot.smarthome.realtime.RealtimeHub;
 import com.aiot.smarthome.service.DeviceCatalog;
 import com.aiot.smarthome.service.DeviceService;
 import com.aiot.smarthome.service.TelemetryService;
@@ -11,6 +13,7 @@ import com.aiot.smarthome.repository.HistoryRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.UUID;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -34,6 +37,7 @@ public class MqttCommandPublisher implements MqttCallback {
   private final DeviceService deviceService;
   private final TelemetryService telemetryService;
   private final HistoryRepository historyRepository;
+  private final RealtimeHub realtimeHub;
   private final ObjectMapper objectMapper;
   private MqttClient client;
 
@@ -43,12 +47,14 @@ public class MqttCommandPublisher implements MqttCallback {
       @Lazy DeviceService deviceService,
       TelemetryService telemetryService,
       HistoryRepository historyRepository,
+      RealtimeHub realtimeHub,
       ObjectMapper objectMapper) {
     this.properties = properties;
     this.deviceCatalog = deviceCatalog;
     this.deviceService = deviceService;
     this.telemetryService = telemetryService;
     this.historyRepository = historyRepository;
+    this.realtimeHub = realtimeHub;
     this.objectMapper = objectMapper;
   }
 
@@ -205,6 +211,16 @@ public class MqttCommandPublisher implements MqttCallback {
       
       historyRepository.saveVoiceCommand(recognizedText, mappedDevice, action, confidence, "Accepted");
       logger.info("Saved voice command: '{}'", recognizedText);
+
+      VoiceCommandResponse voiceResponse = new VoiceCommandResponse(
+          null,
+          recognizedText,
+          mappedDevice,
+          action,
+          confidence,
+          "Accepted",
+          OffsetDateTime.now());
+      realtimeHub.broadcastVoiceCommand(voiceResponse);
     } catch (Exception exception) {
       logger.warn("Ignoring invalid voice payload '{}': {}", payload, exception.getMessage());
     }
