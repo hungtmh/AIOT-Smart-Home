@@ -28,3 +28,4 @@ backend/.env
 *.sln
 *.sw?
 .codegraph
+camera/fire_images/
