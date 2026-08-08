@@ -3,11 +3,12 @@
 #include "esp_camera.h"
 
 //================ WiFi ==================
-const char* WIFI_SSID = "Chicken";
-const char* WIFI_PASS = "abcxyz123";
-
+// const char* WIFI_SSID = "Chicken";
+// const char* WIFI_PASS = "abcxyz123";
+const char* WIFI_SSID     = "Huy Duy";
+const char* WIFI_PASS  = "Vietnam060512";
 //======= Python Flask Server ============
-const char* SERVER_URL = "http://10.201.228.144:5000/upload";
+const char* SERVER_URL = "http://192.168.1.3:5000/upload";
 
 //============== Camera Pins (AI Thinker) ==============
 #define PWDN_GPIO_NUM     32

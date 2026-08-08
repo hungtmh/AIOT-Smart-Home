@@ -22,7 +22,7 @@
 #include <ESP32Servo.h>
 #include <DHT.h>
 
-// FreeRTOS + I2S cho Voice Recognition
+// FreeRTOS + I2S cho Voice Recognition0
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
@@ -32,8 +32,10 @@
 // =============================================================================
 //  CẤU HÌNH WIFI
 // =============================================================================
-const char* WIFI_SSID     = "HCMUS-Phonghoc";
-const char* WIFI_PASSWORD  = "khtn@phonghoc";
+// const char* WIFI_SSID     = "Alterix";
+// const char* WIFI_PASSWORD  = "12345679";
+const char* WIFI_SSID     = "Huy Duy";
+const char* WIFI_PASSWORD  = "Vietnam060512";
 
 // =============================================================================
 //  CẤU HÌNH MQTT BROKER (HIVEMQ CLOUD - TLS 8883)
@@ -51,19 +53,17 @@ const char* MQTT_CLIENT_ID = "esp32-smart-home-01";
 // --- Nhận lệnh điều khiển từ Web/Backend (Subscribe) ---
 const char* LED_CMD_TOPIC       = "aiot/esp32-s3/device/led/set";
 const char* SERVO_CMD_TOPIC     = "aiot/esp32-s3/device/servo/set";
-const char* BUZZER_CMD_TOPIC    = "aiot/esp32-s3/device/buzzer/set";
 const char* PUMP_CMD_TOPIC      = "aiot/esp32-s3/device/pump/set";
 
 // --- Gửi trạng thái thiết bị lên Web/Backend (Publish) ---
 const char* LED_STATE_TOPIC     = "aiot/esp32-s3/device/led/state";
 const char* SERVO_STATE_TOPIC   = "aiot/esp32-s3/device/servo/state";
-const char* BUZZER_STATE_TOPIC  = "aiot/esp32-s3/device/buzzer/state";
 const char* PUMP_STATE_TOPIC    = "aiot/esp32-s3/device/pump/state";
 
 // --- Telemetry: Gửi dữ liệu cảm biến lên Web/Backend ---
 const char* TELEMETRY_TOPIC     = "aiot/esp32-s3/telemetry";
 
-// --- Voice Command: Gửi lệnh giọng nói lên Web/Backend ---
+// --- Voice Command: Gửi sự kiện giọng nói lên Web/Backend ---
 const char* VOICE_COMMAND_TOPIC = "aiot/esp32-s3/voice/command";
 
 // --- MQ-2 Alert: Cảnh báo khí gas & cài đặt ngưỡng từ xa ---
@@ -103,10 +103,10 @@ const unsigned long PUMP_AUTO_OFF_MS        = 60000;  // Tự tắt bơm (Servo 
 // =============================================================================
 
 // --- Trạng thái thiết bị ---
-bool ledState    = false;
-bool servoState  = false;
-bool buzzerState = false;
-bool pumpState   = false; // Dùng lưu trạng thái ON/OFF của Servo thứ 2
+volatile bool ledState    = false;
+volatile bool servoState  = false;
+volatile bool buzzerState = false;
+volatile bool pumpState   = false; // Dùng lưu trạng thái ON/OFF của Servo thứ 2
 
 // --- Telemetry ---
 bool telemetryEnabled      = false;  // Chỉ đọc/gửi telemetry khi Web bật thiết bị
@@ -134,7 +134,7 @@ bool  filterFilled = false;
 // =============================================================================
 //  VOICE RECOGNITION – EDGE IMPULSE
 // =============================================================================
-constexpr float CONFIDENCE_THRESHOLD = 0.30f;
+constexpr float CONFIDENCE_THRESHOLD = 0.80f;
 
 // Kích thước block Audio Task gửi mỗi lần (0.25 giây = 4000 samples @ 16kHz)
 static constexpr int      AUDIO_BLOCK_SAMPLES = 4000;
@@ -161,7 +161,7 @@ static volatile int       voiceCommand = 0;
 static volatile float     voiceConfidence = 0.0f;
 
 // Cooldown chống lặp lệnh voice (tránh cùng 1 lệnh trigger liên tục)
-static constexpr unsigned long VOICE_COOLDOWN_MS = 2000;
+static constexpr unsigned long VOICE_COOLDOWN_MS = 1500;
 static volatile unsigned long  lastVoiceActionMs = 0;
 
 // =============================================================================
@@ -255,8 +255,7 @@ void setBuzzer(bool enabled) {
   } else {
     noTone(BUZZER_PIN);
   }
-  Serial.printf("[BUZZER] %s\n", enabled ? "ON" : "OFF");
-  publishState(BUZZER_STATE_TOPIC, buzzerState);
+  Serial.printf("[BUZZER-LOCAL] %s\n", enabled ? "ON" : "OFF");
 }
 
 void setPump(bool enabled) {
@@ -279,7 +278,6 @@ void setPump(bool enabled) {
 void publishAllStates() {
   publishState(LED_STATE_TOPIC,    ledState);
   publishState(SERVO_STATE_TOPIC,  servoState, "OPEN", "CLOSE");
-  publishState(BUZZER_STATE_TOPIC, buzzerState);
   publishState(PUMP_STATE_TOPIC,   pumpState);
 
   // Publish ngưỡng MQ-2 hiện tại
@@ -616,9 +614,9 @@ static void inferenceTask(void* pvParameters) {
 
     ei_impulse_result_t result = { 0 };
     
-    Serial.printf("[VOICE-DEBUG] Bắt đầu gọi run_classifier() (DRAM block: %u bytes)...\n", largestBlock);
+    // Serial.printf("[VOICE-DEBUG] Bắt đầu gọi run_classifier() (DRAM block: %u bytes)...\n", largestBlock);
     EI_IMPULSE_ERROR err = run_classifier(&signal, &result, false);
-    Serial.println("[VOICE-DEBUG] Thư viện run_classifier() đã chạy xong!");
+    // Serial.println("[VOICE-DEBUG] Thư viện run_classifier() đã chạy xong!");
 
     if (err != EI_IMPULSE_OK) {
       static int classifierErrorCount = 0;
@@ -650,20 +648,66 @@ static void inferenceTask(void* pvParameters) {
                     result.classification[bestIdx].label, maxScore * 100.0f);
     }
 
-    // Kiểm tra threshold + cooldown
+    // Kiểm tra threshold
     if (maxScore >= CONFIDENCE_THRESHOLD && bestIdx >= 0) {
-      if (millis() - lastVoiceActionMs >= VOICE_COOLDOWN_MS) {
-        const char* label = result.classification[bestIdx].label;
-        Serial.printf("[VOICE] >>> ĐÃ VƯỢT NGƯỠNG (%.1f%%) - Nhận diện: '%s'\n", maxScore * 100.0f, label);
+      const char* label = result.classification[bestIdx].label;
+      unsigned long now = millis();
 
-        // Map label → voiceCommand (dispatch bởi loop() trên cùng Core 1)
-        if      (strcmp(label, "mo_cua")   == 0) { voiceCommand = 1; voiceConfidence = maxScore; Serial.println("[VOICE] Khớp lệnh: mo_cua -> voiceCommand = 1"); }
-        else if (strcmp(label, "dong_cua") == 0) { voiceCommand = 2; voiceConfidence = maxScore; Serial.println("[VOICE] Khớp lệnh: dong_cua -> voiceCommand = 2"); }
-        else if (strcmp(label, "mo_den")   == 0) { voiceCommand = 3; voiceConfidence = maxScore; Serial.println("[VOICE] Khớp lệnh: mo_den -> voiceCommand = 3"); }
-        else if (strcmp(label, "tat_den")  == 0) { voiceCommand = 4; voiceConfidence = maxScore; Serial.println("[VOICE] Khớp lệnh: tat_den -> voiceCommand = 4"); }
-        else { Serial.printf("[VOICE] LỖI: Nhãn '%s' không khớp với bất kỳ chữ nào trong code!\n", label); }
+      int cmd = 0;
+      bool stateChanged = false;
+
+      // Kiểm tra xem lệnh có làm thay đổi trạng thái phần cứng không
+      if (strcmp(label, "mo_cua") == 0) {
+        if (!servoState) {
+          cmd = 1;
+          stateChanged = true;
+          Serial.println("[VOICE] Khớp lệnh: mo_cua -> Cửa đang đóng, tiến hành MỞ CỬA");
+        } else {
+          Serial.println("[VOICE] Nhận diện: mo_cua nhưng Cửa ĐÃ MỞ SẴN -> Bỏ qua, KHÔNG delay.");
+        }
+      } else if (strcmp(label, "dong_cua") == 0) {
+        if (servoState) {
+          cmd = 2;
+          stateChanged = true;
+          Serial.println("[VOICE] Khớp lệnh: dong_cua -> Cửa đang mở, tiến hành ĐÓNG CỬA");
+        } else {
+          Serial.println("[VOICE] Nhận diện: dong_cua nhưng Cửa ĐÃ ĐÓNG SẴN -> Bỏ qua, KHÔNG delay.");
+        }
+      } else if (strcmp(label, "mo_den") == 0) {
+        if (!ledState) {
+          cmd = 3;
+          stateChanged = true;
+          Serial.println("[VOICE] Khớp lệnh: mo_den -> Đèn đang tắt, tiến hành BẬT ĐÈN");
+        } else {
+          Serial.println("[VOICE] Nhận diện: mo_den nhưng Đèn ĐÃ BẬT SẴN -> Bỏ qua, KHÔNG delay.");
+        }
+      } else if (strcmp(label, "tat_den") == 0) {
+        if (ledState) {
+          cmd = 4;
+          stateChanged = true;
+          Serial.println("[VOICE] Khớp lệnh: tat_den -> Đèn đang bật, tiến hành TẮT ĐÈN");
+        } else {
+          Serial.println("[VOICE] Nhận diện: tat_den nhưng Đèn ĐÃ TẮT SẴN -> Bỏ qua, KHÔNG delay.");
+        }
       } else {
-        Serial.printf("[VOICE-DEBUG] Bị bỏ qua do chưa hết thời gian chờ chống nhiễu (Cooldown).\n");
+        Serial.printf("[VOICE] LỖI: Nhãn '%s' không khớp với bất kỳ chữ nào trong code!\n", label);
+      }
+
+      // Chỉ kích hoạt Cooldown và thực thi phần cứng khi thực sự có chuyển đổi trạng thái
+      if (stateChanged && cmd > 0) {
+        if (now - lastVoiceActionMs >= VOICE_COOLDOWN_MS) {
+          Serial.printf("[VOICE] >>> ĐÃ VƯỢT NGƯỠNG (%.1f%%) - Thực thi lệnh: '%s'\n", maxScore * 100.0f, label);
+          voiceCommand = cmd;
+          voiceConfidence = maxScore;
+          lastVoiceActionMs = now; // Bật cooldown (chờ servo quay xong để chặn tiếng ồn động cơ)
+
+          // Xóa sạch circular buffer âm thanh để chống tiếng cơ servo / âm đuôi lặp lại
+          memset(inferenceBuffer, 0, sizeof(inferenceBuffer));
+          inferenceWritePos = 0;
+          inferenceBlockCount = 0;
+        } else {
+          Serial.printf("[VOICE-DEBUG] Bị bỏ qua do chưa hết thời gian chờ chống nhiễu (Cooldown).\n");
+        }
       }
     } else if (bestIdx >= 0) {
       // Đã in ở trên nên không cần in lại báo bị bỏ qua do điểm số thấp nữa, để tránh trôi log
@@ -715,8 +759,6 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     setLed(nextState);
   } else if (strcmp(topic, SERVO_CMD_TOPIC) == 0) {
     setServo(nextState);
-  } else if (strcmp(topic, BUZZER_CMD_TOPIC) == 0) {
-    setBuzzer(nextState);
   } else if (strcmp(topic, PUMP_CMD_TOPIC) == 0) {
     setPump(nextState);
   }
@@ -763,7 +805,6 @@ void connectMqtt() {
       // Subscribe các topic nhận lệnh
       mqtt.subscribe(LED_CMD_TOPIC);
       mqtt.subscribe(SERVO_CMD_TOPIC);
-      mqtt.subscribe(BUZZER_CMD_TOPIC);
       mqtt.subscribe(PUMP_CMD_TOPIC);
       mqtt.subscribe(MQ2_THRESHOLD_CMD_TOPIC);
 
@@ -804,7 +845,6 @@ void tryReconnectMqtt() {
     
     mqtt.subscribe(LED_CMD_TOPIC);
     mqtt.subscribe(SERVO_CMD_TOPIC);
-    mqtt.subscribe(BUZZER_CMD_TOPIC);
     mqtt.subscribe(PUMP_CMD_TOPIC);
     mqtt.subscribe(MQ2_THRESHOLD_CMD_TOPIC);
     publishAllStates();
@@ -976,6 +1016,7 @@ void loop() {
     int cmd = voiceCommand;
     float conf = voiceConfidence;
     voiceCommand = 0;  // Clear trước khi xử lý
+    lastVoiceActionMs = millis();
     
     Serial.printf("\n[LOOP-DEBUG] Đã bắt được lệnh voiceCommand = %d từ hàm loop(). Đang thực thi phần cứng...\n", cmd);
 
@@ -992,7 +1033,6 @@ void loop() {
         if (!servoState) {
           Serial.println("[VOICE] >>> MO CUA → Servo OPEN");
           setServo(true);  // Hàm setServo() đã tự động publishState(SERVO_STATE_TOPIC, true) lên MQTT
-          lastVoiceActionMs = millis();
           Serial.println("[VOICE-PUB] Đã publish trạng thái Cửa (OPEN) lên Web/MQTT.");
         } else {
           Serial.println("[VOICE] >>> Cửa đã mở, bỏ qua lệnh MO CUA");
@@ -1005,7 +1045,6 @@ void loop() {
         if (servoState) {
           Serial.println("[VOICE] >>> DONG CUA → Servo CLOSE");
           setServo(false); // Hàm setServo() đã tự động publishState(SERVO_STATE_TOPIC, false) lên MQTT
-          lastVoiceActionMs = millis();
           Serial.println("[VOICE-PUB] Đã publish trạng thái Cửa (CLOSE) lên Web/MQTT.");
         } else {
           Serial.println("[VOICE] >>> Cửa đã đóng, bỏ qua lệnh DONG CUA");
@@ -1018,7 +1057,6 @@ void loop() {
         if (!ledState) {
           Serial.println("[VOICE] >>> MO DEN → LED ON");
           setLed(true);    // Hàm setLed() đã tự động publishState(LED_STATE_TOPIC, true) lên MQTT
-          lastVoiceActionMs = millis();
           Serial.println("[VOICE-PUB] Đã publish trạng thái Đèn (ON) lên Web/MQTT.");
         } else {
           Serial.println("[VOICE] >>> Đèn đã bật, bỏ qua lệnh MO DEN");
@@ -1031,7 +1069,6 @@ void loop() {
         if (ledState) {
           Serial.println("[VOICE] >>> TAT DEN → LED OFF");
           setLed(false);   // Hàm setLed() đã tự động publishState(LED_STATE_TOPIC, false) lên MQTT
-          lastVoiceActionMs = millis();
           Serial.println("[VOICE-PUB] Đã publish trạng thái Đèn (OFF) lên Web/MQTT.");
         } else {
           Serial.println("[VOICE] >>> Đèn đã tắt, bỏ qua lệnh TAT DEN");
@@ -1039,15 +1076,16 @@ void loop() {
         break;
     }
 
+    // Gửi sự kiện nhận diện giọng nói lên Web Dashboard & Lịch sử History
     if (strlen(text) > 0 && mqtt.connected()) {
       snprintf(payload, sizeof(payload),
                "{\"recognizedText\":\"%s\",\"mappedDevice\":\"%s\",\"action\":\"%s\",\"confidence\":%.2f}",
                text, device, action, conf <= 1.0f ? (conf * 100.0f) : conf);
       mqtt.publish(VOICE_COMMAND_TOPIC, payload);
-      Serial.printf("[VOICE-PUB] Đã publish voice command lên %s: %s\n", VOICE_COMMAND_TOPIC, payload);
+      Serial.printf("[VOICE-PUB] Đã đồng bộ Voice Command lên Web (%s): %s\n", VOICE_COMMAND_TOPIC, payload);
     }
 
     // Kích hoạt telemetry theo logic hiện tại
-    telemetryEnabled = (ledState || servoState || buzzerState || pumpState);
+    telemetryEnabled = 1;
   }
 }

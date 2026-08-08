@@ -13,7 +13,6 @@ public class DeviceCatalog {
   private final List<DeviceDefinition> devices = List.of(
       new DeviceDefinition("led", "LED Light", "relay"),
       new DeviceDefinition("servo", "Servo Motor", "servo"),
-      new DeviceDefinition("buzzer", "Buzzer Alarm", "buzzer"),
       new DeviceDefinition("pump", "Mini Water Pump", "pump"));
 
   private final Map<String, DeviceDefinition> devicesById = devices.stream()

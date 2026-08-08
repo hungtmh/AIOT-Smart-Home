@@ -50,40 +50,48 @@ last_sent_time = 0
 # MQTT
 # =========================
 
-def on_connect(client, userdata, flags, rc):
+mqtt_connected = False
 
-    print(
-        "MQTT Connected:",
-        rc
-    )
+def on_connect(*args, **kwargs):
+    global mqtt_connected
+    rc = args[3] if len(args) > 3 else (args[2] if len(args) > 2 else "OK")
+    print("MQTT Connected:", rc)
+    mqtt_connected = True
 
+def on_disconnect(*args, **kwargs):
+    global mqtt_connected
+    mqtt_connected = False
+    print("MQTT Disconnected")
 
-mqtt_client = mqtt.Client()
+if hasattr(mqtt, "CallbackAPIVersion"):
+    mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+else:
+    mqtt_client = mqtt.Client()
 
 mqtt_client.on_connect = on_connect
+mqtt_client.on_disconnect = on_disconnect
+
+
+def publish_mqtt(topic, payload):
+    if mqtt_connected:
+        try:
+            mqtt_client.publish(topic, payload)
+        except Exception as e:
+            print("MQTT Publish Error:", e)
+    else:
+        print(f"MQTT not connected (skipping payload '{payload}' to {topic})")
 
 
 try:
-
     mqtt_client.connect(
         mqtt_broker,
         mqtt_port,
         60
     )
-
     mqtt_client.loop_start()
-
-    print(
-        "MQTT ready"
-    )
-
-
+    print("MQTT ready")
 except Exception as e:
-
-    print(
-        "MQTT error:",
-        e
-    )
+    print("MQTT error:", e)
 
 
 
@@ -371,7 +379,7 @@ def upload():
         if current_time - last_sent_time >= SEND_COOLDOWN:
 
 
-            mqtt_client.publish(
+            publish_mqtt(
                 mqtt_topic,
                 "1"
             )
@@ -412,7 +420,7 @@ def upload():
             ):
 
 
-                mqtt_client.publish(
+                publish_mqtt(
                     mqtt_topic,
                     "0"
                 )

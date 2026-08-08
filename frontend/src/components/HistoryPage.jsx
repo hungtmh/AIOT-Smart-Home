@@ -7,7 +7,6 @@ const { BarChart3, Download, Filter, History, Loader } = icons
 const TABS = [
   { id: 'sensors', label: 'Sensors', icon: 'BarChart3' },
   { id: 'controls', label: 'Controls', icon: 'SlidersHorizontal' },
-  { id: 'voice', label: 'Voice', icon: 'Mic' },
   { id: 'alerts', label: 'Alerts', icon: 'BellRing' },
   { id: 'fire', label: 'Fire Alerts', icon: 'Flame' },
 ]
@@ -31,7 +30,7 @@ function renderCell(value) {
 
 function HistoryPage({ activeTab, onTabChange }) {
   const [historyPage, setHistoryPage] = useState(null)
-  const [counts, setCounts] = useState({ sensors: 0, controls: 0, voice: 0, alerts: 0, fire: 0 })
+  const [counts, setCounts] = useState({ sensors: 0, controls: 0, alerts: 0, fire: 0 })
   const [currentPage, setCurrentPage] = useState(0)
   const [loading, setLoading] = useState(false)
 

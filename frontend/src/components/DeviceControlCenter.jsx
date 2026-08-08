@@ -71,7 +71,7 @@ function DeviceControlCenter() {
       <div className="section-heading">
         <div>
           <h2>Device Control Center</h2>
-          <p>Manual controls for relay, servo, buzzer and pump outputs</p>
+          <p>Manual controls for relay, servo, and pump outputs</p>
         </div>
         <span>
           <Wifi size={16} aria-hidden="true" />

@@ -1,0 +1,1904 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{vietnam}
+\usepackage[left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{amsmath,graphicx,booktabs,tabularx}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{tcolorbox}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{float}
+\usepackage{tocloft}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{forest}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage[vietnamese,english]{babel}
+\pagestyle{fancy}
+\fancyhf{} % Xóa header và footer mặc định
+\fancyfoot[C]{\thepage} % Số trang ở chính giữa footer
+% Header
+\fancyhead[L]{NHÓM 5} % Trái
+\fancyhead[C]{} % Giữa
+\fancyhead[R]{23TGMT} % Phải
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+\setlength{\parindent}{0pt}
+\renewcommand{\contentsname}{Mục lục}
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\figurename}{Hình}
+\addto\captionsvietnamese{%
+    \renewcommand{\tablename}{Bảng}%
+    \renewcommand{\figurename}{Hình}%
+    \renewcommand{\contentsname}{Mục lục}%
+}
+\addto\captionsenglish{%
+    \renewcommand{\tablename}{Bảng}%
+    \renewcommand{\figurename}{Hình}%
+    \renewcommand{\contentsname}{Mục lục}%
+}
+\titleformat{\section}{\Large\bfseries}{Part \Roman{section}.}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{1em}{}
+
+\begin{document}
+
+% ------------ TRANG BÌA -------------
+\begin{titlepage}
+\begin{tikzpicture}[remember picture,overlay,inner sep=0,outer sep=0]
+     \draw[blue!70!black,line width=4pt] ([xshift=-1.5cm,yshift=-2cm]current page.north east) coordinate (A)--([xshift=1.5cm,yshift=-2cm]current page.north west) coordinate(B)--([xshift=1.5cm,yshift=2cm]current page.south west) coordinate (C)--([xshift=-1.5cm,yshift=2cm]current page.south east) coordinate(D)--cycle;
+
+     \draw ([yshift=0.5cm,xshift=-0.5cm]A)-- ([yshift=0.5cm,xshift=0.5cm]B)--
+     ([yshift=-0.5cm,xshift=0.5cm]B) --([yshift=-0.5cm,xshift=-0.5cm]B)--([yshift=0.5cm,xshift=-0.5cm]C)--([yshift=0.5cm,xshift=0.5cm]C)--([yshift=-0.5cm,xshift=0.5cm]C)-- ([yshift=-0.5cm,xshift=-0.5cm]D)--([yshift=0.5cm,xshift=-0.5cm]D)--([yshift=0.5cm,xshift=0.5cm]D)--([yshift=-0.5cm,xshift=0.5cm]A)--([yshift=-0.5cm,xshift=-0.5cm]A)--([yshift=0.5cm,xshift=-0.5cm]A);
+
+
+     \draw ([yshift=-0.3cm,xshift=0.3cm]A)-- ([yshift=-0.3cm,xshift=-0.3cm]B)--
+     ([yshift=0.3cm,xshift=-0.3cm]B) --([yshift=0.3cm,xshift=0.3cm]B)--([yshift=-0.3cm,xshift=0.3cm]C)--([yshift=-0.3cm,xshift=-0.3cm]C)--([yshift=0.3cm,xshift=-0.3cm]C)-- ([yshift=0.3cm,xshift=0.3cm]D)--([yshift=-0.3cm,xshift=0.3cm]D)--([yshift=-0.3cm,xshift=-0.3cm]D)--([yshift=0.3cm,xshift=-0.3cm]A)--([yshift=0.3cm,xshift=0.3cm]A)--([yshift=-0.3cm,xshift=0.3cm]A);
+
+\end{tikzpicture}
+\vspace*{1cm}
+\begin{center}
+    \makebox[\textwidth][c]{\large\bfseries ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH}\\[4pt]
+    \makebox[\textwidth][c]{\large\bfseries TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN - VNUHCM}\\[4pt]
+    \makebox[\textwidth][c]{\large\bfseries KHOA CÔNG NGHỆ THÔNG TIN}\\[1cm]
+    
+
+    \includegraphics[scale=0.15]{logo.jpg}\\[0.8cm]
+
+    % Môn học
+    {\large\bfseries NHẬP MÔN ĐIỀU KHIỂN THIẾT BỊ THÔNG MINH}
+
+    \vspace{6pt}
+
+    {\large Class: \textbf{23TGMT}}
+    
+    \vspace{10pt}
+    
+    % Tiêu đề đồ án (một dòng, màu, to, căn giữa)
+    \makebox[\textwidth][c]{\large\bfseries \color{black!70!black}ĐẶC TẢ YÊU CẦU ĐỒ ÁN}
+    \makebox[\textwidth][c]{\small\bfseries \color{black!70!black}Hệ thống Smart Home tích hợp điều khiển giọng nói, giám sát môi trường}
+    
+    \vspace{1.5cm}
+
+    % Giáo viên box
+    \begin{tcolorbox}[colback=blue!5!white, colframe=blue!50!black, width=0.9\textwidth, boxrule=0.8pt, arc=3pt, left=8pt, right=8pt]
+        \textbf{Giảng viên hướng dẫn:} \\
+        \textbf{Thầy: Võ Hoài Việt}\\
+        \textbf{Cô: Đỗ Thị Thanh Hà}
+    \end{tcolorbox}
+    \vspace{1cm}
+
+    % Sinh viên box
+    \begin{tcolorbox}[colback=gray!10!white, colframe=gray!60!black, width=0.9\textwidth, boxrule=0.8pt, arc=3pt, left=8pt, right=8pt]
+    \textbf{Nhóm sinh viên thực hiện - Nhóm 5:} \\
+    Nguyễn Đặng Minh Duy -- 23127042 \\
+    Huỳnh Lê Khôi -- 23127068 \\
+    Trần Mạnh Hùng -- 23127195 \\
+    Lê Trọng Nguyên -- 23127440
+    \end{tcolorbox}
+
+    \vfill
+    {\large\textbf{HO CHI MINH CITY, 2026}}
+\end{center}
+\end{titlepage}
+\section*{LỊCH SỬ CHỈNH SỬA}
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|p{3cm}|p{2cm}|p{6.5cm}|p{4cm}|}
+\hline
+\textbf{Ngày} & \textbf{Phiên bản} & \textbf{Nội dung} & \textbf{Tác giả} \\
+\hline
+
+25/05/2026 & 1.0 & 
+Viết phần giới thiệu, xây dựng dàn ý và lập cấu trúc tài liệu. & 
+Huỳnh Lê Khôi, Lê Trọng Nguyên \\
+\hline
+
+26/05/2026 & 1.1 & 
+Viết yêu cầu chức năng cho ứng dụng xử lý giọng nói. & 
+Nguyễn Đặng Minh Duy \\
+\hline
+
+27/05/2026 & 1.2 & 
+Viết yêu cầu chức năng quản lý thiết bị và giám sát môi trường. & 
+Trần Mạnh Hùng \\
+\hline
+
+28/05/2026 & 1.3 & 
+Viết các yêu cầu phi chức năng của hệ thống. & 
+Lê Trọng Nguyên \\
+\hline
+
+28/05/2026 & 1.4 & 
+Viết phần dự trù kinh phí cho thiết bị và linh kiện triển khai. & 
+Trần Mạnh Hùng, Nguyễn Đặng Minh Duy \\
+\hline
+29/05/2026 & 1.5 & 
+Viết các yêu cầu khác của đồ án và kết luận. & 
+Huỳnh Lê Khôi \\
+\hline
+02/06/2026 & 1.6 & 
+Thêm Use-case: Cảnh báo sự cố cháy và chữa cháy tự động. & 
+Huỳnh Lê Khôi, Nguyễn Đặng Minh Duy \\
+\hline
+03/06/2026 & 1.7 & 
+Chỉnh sửa nội dung slide cho phù hợp, chỉnh sửa những chỗ bất hợp lí về tính khả thi. & 
+Lê Trọng Nguyên, Trần Mạnh Hùng \\
+\hline
+05/06/2026 & 1.8 & 
+Chỉnh sửa những phần chưa kỹ của Report và Specifications & 
+Lê Trọng Nguyên, Trần Mạnh Hùng \\
+\hline
+14/06/2026 & 2.0 & 
+Sửa và format lại mục đích, các Use-Case tương ứng theo hướng dẫn của GVHD &
+Huỳnh Lê Khôi, Lê Trọng Nguyên \\
+\hline
+16/06/2026 & 2.1 & 
+Thêm các lưu đồ tương ứng cho từng Trường hợp sử dụng &
+Nguyễn Đặng Minh Duy, Trần Mạnh Hùng \\
+\hline
+16/06/2026 & 2.2 & 
+Kiểm tra lại các mục 2.0 và 2.1, chỉnh sửa các lỗi chi tiết nhỏ &
+Nguyễn Đặng Minh Duy \\
+\hline
+
+
+\end{tabular}
+\end{table}
+\newpage
+\tableofcontents
+\newpage
+
+\section{Giới thiệu}
+\subsection{Bối cảnh} Trong những năm gần đây, Internet of Things (IoT) đã trở thành một trong những xu hướng phát triển quan trọng trong lĩnh vực tự động hóa và nhà thông minh. Việc kết nối các thiết bị điện với Internet giúp người dùng có thể điều khiển, giám sát và quản lý thiết bị từ xa một cách thuận tiện, góp phần nâng cao chất lượng cuộc sống và tối ưu hóa việc sử dụng năng lượng. Song song với đó, các mô hình học máy cỡ nhỏ (TinyML) cho phép triển khai các thuật toán nhận diện trực tiếp trên thiết bị nhúng có tài nguyên hạn chế. Thay vì gửi dữ liệu lên các dịch vụ điện toán đám mây để xử lý, TinyML giúp giảm độ trễ, hạn chế phụ thuộc vào Internet và tăng cường quyền riêng tư của người dùng. Bên cạnh nhu cầu điều khiển thiết bị, vấn đề đảm bảo an toàn trong hộ gia đình cũng ngày càng được quan tâm. Các sự cố như cháy nổ do chập điện, rò rỉ khí gas hoặc nhiệt độ tăng cao có thể gây thiệt hại nghiêm trọng nếu không được phát hiện kịp thời. Vì vậy, việc tích hợp chức năng giám sát môi trường và cảnh báo sớm vào hệ thống Smart Home là cần thiết. Xuất phát từ những nhu cầu trên, nhóm thực hiện xây dựng hệ thống điều khiển và giám sát thiết bị IoT bằng giọng nói kết hợp giao diện Web, đồng thời hỗ trợ cảnh báo cháy trong nhà nhằm cung cấp một giải pháp đơn giản, dễ sử dụng, có khả năng mở rộng và phù hợp với môi trường học tập cũng như các mô hình Smart Home quy mô nhỏ.
+\subsection{Đối tượng hướng đến}
+
+Hệ thống điều khiển thiết bị IoT bằng giọng nói được xây dựng nhằm phục vụ các nhóm người dùng sau:
+
+\begin{itemize}
+\item \textbf{Hộ gia đình sử dụng thiết bị thông minh:}
+Những người muốn điều khiển các thiết bị điện trong nhà một cách thuận tiện thông qua điện thoại hoặc trình duyệt Web mà không cần thao tác trực tiếp.
+
+\item \textbf{Người bận rộn hoặc thường xuyên vắng nhà:}
+
+Người dùng có nhu cầu theo dõi và điều khiển các thiết bị điện từ xa thông qua Internet nhằm tiết kiệm thời gian và nâng cao sự tiện lợi.
+
+\item \textbf{Người cao tuổi hoặc người gặp khó khăn trong thao tác thiết bị điện:}
+
+Những người có thể sử dụng giọng nói để điều khiển thiết bị thay vì phải thực hiện các thao tác phức tạp trên thiết bị điện hoặc ứng dụng.
+
+\item \textbf{Người yêu thích công nghệ và hệ thống Smart Home:}
+
+Những người có nhu cầu trải nghiệm các công nghệ IoT, điều khiển bằng giọng nói và tự động hóa trong môi trường sống hàng ngày.
+
+\item \textbf{Sinh viên, giảng viên và nhà nghiên cứu:}
+
+Các cá nhân hoặc tổ chức muốn nghiên cứu, học tập và triển khai các giải pháp tích hợp giữa IoT, Web Application, MQTT và Trí tuệ nhân tạo.
+
+\item \textbf{Doanh nghiệp hoặc văn phòng quy mô nhỏ:}
+
+Các đơn vị muốn xây dựng hệ thống giám sát và điều khiển thiết bị điện tập trung nhằm tối ưu hóa việc quản lý cơ sở vật chất.
+\end{itemize}
+
+\subsection{Phương thức sử dụng tài liệu}
+
+Tài liệu này được xây dựng nhằm mô tả tổng quan và chi tiết các yêu cầu của hệ thống điều khiển thiết bị IoT bằng giọng nói.
+
+Người đọc có thể sử dụng tài liệu để:
+
+\begin{itemize}
+\item Hiểu được mục tiêu, phạm vi và định hướng phát triển của hệ thống.
+
+\item Nắm được các yêu cầu chức năng và phi chức năng của hệ thống.
+
+\item Làm cơ sở cho quá trình phân tích, thiết kế và triển khai phần mềm.
+
+\item Hỗ trợ xây dựng kiến trúc hệ thống và thiết kế cơ sở dữ liệu.
+
+\item Hỗ trợ quá trình lập trình, kiểm thử và bảo trì hệ thống.
+
+\item Làm tài liệu tham khảo cho các thành viên trong nhóm phát triển và giảng viên hướng dẫn.
+
+\item Làm cơ sở đánh giá mức độ hoàn thành và chất lượng của đồ án.
+
+\end{itemize}
+
+\subsection{Định nghĩa, tiêu chuẩn và khuôn khổ}
+Bảng \ref{tab:definition} trình bày các thuật ngữ, từ viết tắt và công nghệ được sử dụng xuyên suốt trong tài liệu.
+
+\renewcommand{\arraystretch}{1.3}
+\begin{table}[H]
+    \centering
+    \caption{Định nghĩa các thuật ngữ}
+    \label{tab:definition}
+    \small
+    \begin{tabularx}{\linewidth}{|p{3.3cm}|X|}
+        \hline
+        \textbf{Thuật ngữ} & \textbf{Mô tả} \\
+        \hline
+        IoT (Internet of Things) & Mạng lưới các thiết bị có khả năng kết nối Internet để thu thập, trao đổi và xử lý dữ liệu. \\
+        \hline
+        ESP32-S3 & Vi điều khiển đóng vai trò là bộ điều khiển trung tâm của hệ thống, thực hiện thu thập dữ liệu cảm biến, nhận diện giọng nói và điều khiển thiết bị IoT. \\
+        \hline
+        TinyML & Kỹ thuật triển khai các mô hình học máy trực tiếp trên thiết bị nhúng có tài nguyên phần cứng hạn chế. \\
+        \hline
+        MQTT & Giao thức truyền thông nhẹ theo mô hình Publish/Subscribe được sử dụng để trao đổi dữ liệu giữa thiết bị IoT và Máy chủ xử lý. \\
+        \hline
+        REST API & Giao diện lập trình ứng dụng sử dụng giao thức HTTP để trao đổi dữ liệu giữa Bảng điều khiển và Máy chủ xử lý. \\
+        \hline
+        WebSocket & Giao thức truyền dữ liệu hai chiều theo thời gian thực giữa Máy chủ xử lý và Bảng điều khiển. \\
+        \hline
+        JWT & JSON Web Token được sử dụng để xác thực và phân quyền người dùng. \\
+        \hline
+        Smart Home & Mô hình ngôi nhà sử dụng các thiết bị IoT nhằm hỗ trợ điều khiển, giám sát và tự động hóa các thiết bị điện. \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+Hệ thống được xây dựng dựa trên các công nghệ và mô hình phổ biến trong phát triển phần mềm hiện đại, bao gồm kiến trúc phân lớp (Layered Architecture), giao tiếp RESTful API, giao thức MQTT, WebSocket và mô hình nhận diện giọng nói cục bộ trên thiết bị nhúng. Các công nghệ này giúp hệ thống đảm bảo khả năng mở rộng, bảo trì, tích hợp và vận hành ổn định trong quá trình triển khai.
+
+\subsection{Phạm vi và Quan điểm}
+
+Hệ thống tập trung vào việc xây dựng một nền tảng điều khiển, giám sát thiết bị IoT và cảnh báo an toàn trong nhà thông qua Bảng điều khiển Web, kết hợp công nghệ nhận diện giọng nói cục bộ trên thiết bị nhúng.
+
+Phạm vi của hệ thống bao gồm:
+
+\begin{itemize}
+\item Điều khiển các thiết bị IoT thông qua giao diện Web.
+
+\item Điều khiển thiết bị bằng giọng nói thông qua micro và mô hình TinyML chạy trực tiếp trên thiết bị nhúng.
+
+\item Giao tiếp giữa Máy chủ xử lý và thiết bị IoT thông qua giao thức MQTT.
+
+\item Điều khiển các thiết bị bật/tắt như đèn, quạt thông qua Mô-đun rơ-le.
+
+\item Điều khiển các thiết bị cơ khí như rèm cửa hoặc cửa thông minh thông qua Servo Motor.
+
+\item Thu thập dữ liệu môi trường trong nhà như nhiệt độ, độ ẩm và các chỉ số hỗ trợ đánh giá điều kiện sinh hoạt.
+
+\item Giám sát chỉ số khói và trạng thái ngọn lửa để phát hiện nguy cơ cháy trong nhà.
+
+\item Phát hiện dấu hiệu cháy trong nhà dựa trên dữ liệu cảm biến và gửi cảnh báo đến Bảng điều khiển.
+
+\item Kích hoạt cơ chế chữa cháy mô phỏng như còi báo động, đèn cảnh báo, quạt thông gió hoặc bơm nước mini khi phát hiện nguy cơ cháy.
+
+\item Hiển thị trạng thái thiết bị, dữ liệu cảm biến và cảnh báo cháy theo thời gian thực.
+
+\item Lưu trữ lịch sử điều khiển, lịch sử hoạt động của thiết bị và lịch sử cảnh báo cháy.
+
+\item Quản lý danh sách thiết bị IoT trên hệ thống.
+
+\item Quản lý người dùng và xác thực truy cập hệ thống.
+\end{itemize}
+
+Hệ thống được phát triển với các quan điểm sau:
+
+\begin{itemize}
+\item Tăng tính tiện lợi trong việc điều khiển thiết bị điện.
+
+\item Đơn giản hóa quá trình tương tác giữa người dùng và thiết bị IoT.
+
+\item Đảm bảo khả năng giám sát, điều khiển và cảnh báo nguy cơ cháy theo thời gian thực.
+
+\item Tăng cường an toàn trong nhà thông qua cơ chế cảnh báo sớm và hỗ trợ chữa cháy mô phỏng.
+
+\item Tăng khả năng mở rộng và tích hợp thêm các thiết bị trong tương lai.
+
+\item Xây dựng hệ thống có chi phí triển khai thấp nhưng vẫn đáp ứng được các yêu cầu cơ bản của một nền tảng Smart Home.
+
+\item Ưu tiên sử dụng các công nghệ mã nguồn mở và dễ triển khai trong môi trường học tập và nghiên cứu.
+
+\end{itemize}
+
+
+\subsection{Nền tảng và công nghệ phát triển hệ thống}
+Hệ thống được xây dựng dựa trên các công nghệ phổ biến trong lĩnh vực Internet of Things và phát triển ứng dụng Web. Việc lựa chọn các công nghệ này nhằm đảm bảo tính ổn định, khả năng mở rộng, dễ bảo trì và phù hợp với phạm vi của đồ án.
+
+\renewcommand{\arraystretch}{1.3}
+\begin{table}[H]
+    \centering
+    \caption{Các nền tảng và công nghệ sử dụng trong hệ thống}
+    \label{tab:technology-stack}
+    \small
+    \begin{tabularx}{\linewidth}{|p{4cm}|X|}
+        \hline
+        \textbf{Thành phần} & \textbf{Công nghệ sử dụng} \\
+        \hline
+        Thiết bị nhúng & ESP32-S3 \\
+        \hline
+        Phần mềm nhúng & Arduino Framework \\
+        \hline
+        Nhận diện giọng nói & TinyML (TensorFlow Lite for Microcontrollers hoặc ESP-SR) \\
+        \hline
+        Máy chủ xử lý & Spring Boot, Java 17 \\
+        \hline
+        Cơ sở dữ liệu (dự kiến) & MySQL hoặc PostgreSQL \\
+        \hline
+        Máy chủ MQTT (dự kiến) & HiveMQ hoặc Eclipse Mosquitto \\
+        \hline
+        Giao diện Web & HTML, CSS và JavaScript \\
+        \hline
+        Giao tiếp thời gian thực & WebSocket \\
+        \hline
+        Giao tiếp Web & REST API \\
+        \hline
+        Xác thực người dùng & JWT (JSON Web Token) \\
+        \hline
+        Môi trường phát triển & Visual Studio Code, IntelliJ IDEA và Arduino IDE \\
+        \hline
+        Quản lý mã nguồn & Git và GitHub \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{SodoDulieu.png}
+    \caption{Sơ đồ dữ liệu tổng thể của hệ thống}
+    \label{fig:placeholder}
+\end{figure}
+
+Việc sử dụng các công nghệ trên giúp hệ thống đáp ứng yêu cầu điều khiển theo thời gian thực, hỗ trợ giao tiếp giữa các thành phần một cách hiệu quả, đồng thời tạo điều kiện thuận lợi cho việc bảo trì và mở rộng trong tương lai.
+
+\subsection{Các ràng buộc về thiết kế và triển khai}
+
+\subsubsection{Ràng buộc về thiết kế}
+
+Trong quá trình thiết kế hệ thống, nhóm thực hiện cần tuân theo các ràng buộc sau:
+
+\begin{itemize}
+\item Hệ thống Máy chủ xử lý được phát triển bằng Spring Boot.
+
+\item Hệ thống sử dụng MQTT làm giao thức truyền thông chính giữa Máy chủ xử lý và thiết bị IoT.
+
+\item ESP32-S3 hoặc bo mạch nhúng tương đương được sử dụng làm bộ điều khiển trung tâm, đồng thời đảm nhiệm việc thu âm và nhận diện lệnh giọng nói cục bộ.
+
+\item Hệ thống phải hỗ trợ điều khiển bằng giọng nói thông qua mô hình TinyML được triển khai trực tiếp trên thiết bị nhúng.
+
+\item Giao diện người dùng được xây dựng dưới dạng Bảng điều khiển Web và có thể truy cập thông qua trình duyệt.
+
+\item Hệ thống phải hỗ trợ cập nhật dữ liệu theo thời gian thực thông qua WebSocket.
+
+\item Thiết kế phần mềm phải tuân theo kiến trúc phân lớp (Layered Architecture).
+
+\item Dữ liệu người dùng và lịch sử hoạt động phải được lưu trữ trong cơ sở dữ liệu.
+
+\end{itemize}
+
+\subsubsection{Ràng buộc triển khai}
+
+Trong quá trình triển khai hệ thống, cần xem xét các giới hạn sau:
+
+\begin{itemize}
+\item Hiệu năng xử lý, bộ nhớ và dung lượng lưu trữ của thiết bị nhúng có giới hạn so với các máy tính nhúng chuyên dụng, nên mô hình nhận diện giọng nói cần được tối ưu hóa.
+
+\item Chất lượng nhận diện giọng nói phụ thuộc vào môi trường âm thanh, chất lượng micro, tập dữ liệu huấn luyện và mức độ tối ưu của mô hình TinyML nhận diện giọng nói cục bộ.
+
+\item Hệ thống phụ thuộc vào độ ổn định của kết nối Wi-Fi và máy chủ MQTT.
+
+\item Khả năng nhận diện lệnh phụ thuộc vào tập lệnh được hỗ trợ, dữ liệu huấn luyện, độ nhiễu âm thanh và khả năng suy luận của thiết bị nhúng.
+
+\item Chi phí phần cứng và thời gian triển khai đồ án có giới hạn.
+
+\item Hệ thống chỉ triển khai ở quy mô mô phỏng hoặc hộ gia đình nhỏ trong phạm vi đồ án.
+
+\item Một số chức năng nâng cao của Smart Home chưa được triển khai trong phiên bản hiện tại.
+
+\end{itemize}
+
+\subsection{Giả định}
+
+Trong quá trình phân tích, thiết kế và triển khai hệ thống, nhóm đưa ra các giả định sau:
+
+\begin{itemize}
+\item Người dùng có kết nối Internet ổn định để sử dụng các chức năng điều khiển từ xa.
+
+\item ESP32-S3 hoặc thiết bị nhúng nhận diện giọng nói luôn được cấp nguồn trong quá trình vận hành.
+
+\item Các thiết bị IoT đã được cấu hình và kết nối đúng với máy chủ MQTT.
+
+\item Thiết bị nhúng được kết nối với micro tương thích và đã nạp mô hình nhận diện lệnh giọng nói.
+
+\item máy chủ MQTT hoạt động ổn định trong quá trình hệ thống vận hành.
+
+\item Mô hình TinyML nhận diện giọng nói cục bộ đã được huấn luyện, tối ưu và kiểm thử với các lệnh giọng nói chính của hệ thống.
+
+\item Người dùng có kiến thức cơ bản về sử dụng hệ thống Web và thiết bị IoT.
+
+\item Các cảm biến và thiết bị phần cứng được lắp đặt đúng theo thiết kế của hệ thống.
+
+\end{itemize}
+
+\section{Mục đích, mục tiêu và trường hợp sử dụng chi tiết}
+
+\subsection{Mục đích: Xây dựng hệ thống hỗ trợ thông minh và giám sát tự động cho người dùng nhằm nâng cao sự an toàn và tiện nghi trong môi trường nhà ở. }
+
+Một hệ thống nhà ở thông minh là sự kết hợp giữa con người, các thiết bị và các công nghệ thông minh, trong đó hệ thống đảm nhận trách nhiệm cung cấp khả năng giám sát tự động và hỗ trợ thông minh cho người dùng trong môi trường sống. Về lâu dài, hệ thống đóng vai trò là nền tảng giúp nâng cao mức độ an toàn, sự tiện nghi và chất lượng cuộc sống trong nhà ở thông minh. Vì vậy, mục tiêu chính mà hệ thống nhà ở thông minh cần đạt được là “môi trường sống được nâng cao mức độ an toàn và tiện nghi thông qua khả năng hỗ trợ thông minh và giám sát tự động.”
+
+Để đạt được mục đích này, hệ thống cần duy trì lâu dài các mục tiêu con bao gồm: giám sát môi trường theo thời gian thực, phát hiện sớm và cảnh báo các nguy cơ tiềm ẩn, hỗ trợ thông minh trong các hoạt động sinh hoạt hằng ngày, hỗ trợ điều khiển các thiết bị trong nhà, và đảm bảo khả năng kết nối, tương tác đáng tin cậy giữa người dùng và hệ thống. Mỗi mục tiêu con góp phần thúc đẩy việc đạt được mục tiêu tổng thể bằng cách tăng cường an toàn, giảm sự phụ thuộc vào thao tác thủ công và cải thiện trải nghiệm sống của người dùng.
+\newpage
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{KAOS-goal.png}
+    \caption{Mục đích của hệ thống và các mục tiêu tương ứng}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{prism-uploads/UCf.png}
+    \caption{Sơ đồ Use-case tổng quát}
+    \label{fig:placeholder}
+\end{figure}
+
+\subsection{Mục tiêu 1: Hệ thống xử lý lệnh điều khiển thiết bị thông qua giọng nói hoặc web với độ chính xác đạt tối thiểu 95\% và thời gian phản hồi không quá 3 giây, hoàn thành trong 11 tuần triển khai dự án}
+
+\textbf{Cơ sở lý luận:} Mục tiêu này được đặt ra nhằm bảo đảm người dùng có thể tương tác với các thiết bị trong nhà một cách thuận tiện, nhanh chóng và đáng tin cậy thông qua cả giọng nói lẫn giao diện Web. Độ chính xác tối thiểu 95\% giúp hạn chế điều khiển sai thiết bị, trong khi thời gian phản hồi không quá 3 giây bảo đảm trải nghiệm sử dụng tự nhiên, phù hợp với bối cảnh Smart Home và khả năng xử lý cục bộ của ESP32-S3 kết hợp TinyML.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{obj1.png}
+    \caption{Mục tiêu 1: Điều khiển thiết bị IoT tự động}
+    \label{fig:placeholder}
+\end{figure}
+\subsubsection{Yêu cầu chức năng}
+
+\renewcommand{\arraystretch}{1.3}
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu chức năng cho Mục tiêu 1}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|p{1.2cm}|X|p{2cm}|p{2.2cm}|}
+\hline
+\textbf{Mã yêu cầu} &
+\textbf{UC} &
+\textbf{Mô tả} &
+\textbf{Ưu tiên} &
+\textbf{Lĩnh vực} \\ % Sửa \ thành \\
+\hline
+
+FREQ.01 & UC1 &
+Hệ thống phải nhận lệnh điều khiển bằng giọng nói từ người dùng. &
+Bắt buộc &
+IoT \\ % Sửa \ thành \\
+\hline
+
+FREQ.02 & UC1 &
+ESP32-S3 phải thực hiện nhận diện lệnh bằng mô hình TinyML cục bộ. &
+Bắt buộc &
+IoT, TinyML \\ % Sửa \ thành \\
+\hline
+
+FREQ.03 & UC1 &
+Hệ thống phải điều khiển đúng thiết bị tương ứng với lệnh đã nhận diện. &
+Bắt buộc &
+IoT \\ % Sửa \ thành \\
+\hline
+
+FREQ.04 & UC1 &
+Hệ thống phải lưu lịch sử điều khiển bằng giọng nói. &
+Nên có &
+Máy chủ xử lý \\ % Sửa \ thành \\
+\hline
+
+FREQ.05 & UC1 &
+Bảng điều khiển phải cập nhật trạng thái thiết bị theo thời gian thực. &
+Bắt buộc &
+Web, IoT \\ % Sửa \ thành \\
+\hline
+
+FREQ.06 & UC2 &
+Người dùng phải có khả năng điều khiển thiết bị thông qua giao diện Web. &
+Bắt buộc &
+Web \\ % Sửa \ thành \\
+\hline
+
+FREQ.07 & UC2 &
+Máy chủ xử lý phải xác thực quyền điều khiển trước khi gửi lệnh. &
+Bắt buộc &
+Bảo mật \\ % Sửa \ thành \\
+\hline
+
+FREQ.08 & UC2 &
+Máy chủ xử lý phải chuyển yêu cầu điều khiển thành bản tin MQTT. &
+Bắt buộc &
+MQTT \\ % Sửa \ thành \\
+\hline
+
+FREQ.09 & UC2 &
+ESP32-S3 phải thực hiện lệnh nhận được từ máy chủ MQTT. &
+Bắt buộc &
+IoT \\ % Sửa \ thành \\
+\hline
+
+FREQ.10 & UC2 &
+Hệ thống phải lưu lịch sử điều khiển từ xa và đồng bộ trạng thái thiết bị. &
+Nên có &
+Máy chủ xử lý \\
+\hline
+
+\end{tabularx}
+\end{table}
+
+\subsubsection{Trường hợp sử dụng UC1: Điều khiển thiết bị bằng giọng nói}
+
+\textbf{Mã định danh:} UC1
+
+\textbf{Liên kết với mục tiêu:}
+
+Mục tiêu 1 -- Điều khiển thiết bị IoT tự động.
+
+\textbf{Điều kiện tiên quyết:}
+
+\begin{itemize}
+    \item Người dùng đã được xác thực hoặc được cấp quyền điều khiển.
+    \item ESP32-S3 đã kết nối Wi-Fi và máy chủ MQTT.
+    \item Micro hoạt động bình thường.
+    \item Mô hình TinyML đã được triển khai trên ESP32-S3.
+    \item Thiết bị IoT đã được đăng ký trong hệ thống.
+\end{itemize}
+
+\textbf{Tác nhân:}
+
+Người dùng, ESP32-S3, Máy chủ MQTT, Máy chủ xử lý, Thiết bị IoT.
+
+\textbf{Mô tả:} \\
+
+Trường hợp sử dụng này cho phép người dùng điều khiển các thiết bị IoT bằng giọng nói. Âm thanh được thu nhận bởi micro và xử lý trực tiếp trên ESP32-S3 bằng mô hình TinyML để nhận diện lệnh. Sau khi lệnh được xác nhận, ESP32-S3 điều khiển thiết bị tương ứng (rơ-le hoặc động cơ servo), đồng thời gửi trạng thái mới tới máy chủ để lưu lịch sử và đồng bộ lên Bảng điều khiển theo thời gian thực.
+
+\textbf{Liên kết tới yêu cầu chức năng:}
+
+FREQ.01 -- FREQ.05
+
+\vspace{0.3cm}
+
+\textbf{Luồng tương tác và phản hồi chính}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Luồng tương tác và phản hồi của UC1}
+\begin{tabularx}{\linewidth}{|p{3.5cm}|X|}
+\hline
+\textbf{Trường hợp sử dụng} &
+\textbf{Luồng tương tác và phản hồi} \\
+\hline
+
+\multirow{13}{=}{\parbox{3.2cm}{\centering\textit{UC1. Điều khiển thiết bị\\bằng giọng nói}}}
+&
+1. Người dùng phát biểu lệnh điều khiển.\\
+
+&2. Micro thu nhận tín hiệu âm thanh.\\
+
+&3. ESP32-S3 nhận dữ liệu âm thanh.\\
+
+&4. ESP32-S3 thực hiện tiền xử lý tín hiệu.\\
+
+&5. Mô hình TinyML nhận diện lệnh giọng nói.\\
+
+&6. ESP32-S3 xác định thiết bị và hành động cần thực hiện.\\
+
+&7. ESP32-S3 gửi tín hiệu điều khiển tới mô-đun rơ-le hoặc động cơ servo.\\
+
+&8. Thiết bị IoT thay đổi trạng thái.\\
+
+&9. ESP32-S3 gửi trạng thái mới tới máy chủ MQTT.\\
+
+&10. Máy chủ xử lý cập nhật cơ sở dữ liệu và lưu lịch sử điều khiển.\\
+
+&11. Bảng điều khiển hiển thị trạng thái mới của thiết bị.\\
+
+&12. Nếu lệnh không được nhận diện hoặc không hợp lệ:
+\begin{itemize}
+\item Hệ thống không thực hiện điều khiển.
+\item ESP32-S3 thông báo lỗi hoặc yêu cầu người dùng phát biểu lại.
+\end{itemize}
+\\
+
+&13. Kết thúc quá trình điều khiển.\\
+\hline
+
+\end{tabularx}
+\end{table}
+
+\subsubsection{Trường hợp sử dụng UC2: Điều khiển thiết bị từ xa qua Web}
+
+\textbf{Mã định danh:}
+UC2
+
+\textbf{Liên kết với mục tiêu:}
+Mục tiêu 1 -- Điều khiển thiết bị IoT tự động.
+
+\textbf{Điều kiện tiên quyết:}
+\begin{itemize}
+    \item Người dùng đã đăng nhập vào hệ thống.
+    \item Thiết bị IoT đã được đăng ký và cấu hình trên hệ thống.
+    \item Bảng điều khiển Web đã kết nối với Máy chủ xử lý.
+    \item Máy chủ xử lý đã kết nối với Máy chủ MQTT.
+    \item ESP32-S3 đã kết nối Wi-Fi và Máy chủ MQTT.
+\end{itemize}
+
+\textbf{Tác nhân:}
+
+Người dùng, Bảng điều khiển Web, Máy chủ xử lý, Máy chủ MQTT, ESP32-S3 và Thiết bị IoT.
+
+\textbf{Mô tả:}
+
+Trường hợp sử dụng này cho phép người dùng điều khiển thiết bị IoT từ xa thông qua giao diện Web. Sau khi người dùng gửi yêu cầu điều khiển, hệ thống xác thực quyền truy cập, tạo bản tin MQTT và gửi tới ESP32-S3. ESP32-S3 thực hiện điều khiển thiết bị, gửi trạng thái mới về Máy chủ xử lý để lưu lịch sử và đồng bộ lên Bảng điều khiển theo thời gian thực.
+
+\textbf{Liên kết tới yêu cầu chức năng:}
+
+FREQ.06 -- FREQ.10
+\\
+
+\begin{tabularx}{\linewidth}{|p{4cm}|X|}
+\hline
+\textbf{Trường hợp sử dụng} &
+\textbf{Luồng tương tác và phản hồi} \\
+\hline
+
+\multirow{13}{=}{\parbox{3.2cm}{\centering\textit{UC2. Điều khiển thiết bị\\từ xa qua Web}}}
+&
+1. Người dùng truy cập Bảng điều khiển Web. \\
+
+&
+2. Người dùng chọn thiết bị cần điều khiển. \\
+
+&
+3. Người dùng thực hiện thao tác điều khiển. \\
+
+&
+4. Bảng điều khiển gửi yêu cầu điều khiển tới Máy chủ xử lý. \\
+
+&
+5. Máy chủ xử lý xác thực quyền điều khiển của người dùng. \\
+
+&
+6. Máy chủ xử lý tạo bản tin MQTT. \\
+
+&
+7. Máy chủ MQTT chuyển bản tin tới ESP32-S3. \\
+
+&
+8. ESP32-S3 điều khiển thiết bị. \\
+
+&
+9. ESP32-S3 gửi trạng thái mới về Máy chủ xử lý. \\
+
+&
+10. Máy chủ xử lý cập nhật cơ sở dữ liệu và lưu lịch sử điều khiển. \\
+
+&
+11. Bảng điều khiển hiển thị trạng thái mới. \\
+
+&
+12. Nếu người dùng không có quyền điều khiển:
+\begin{itemize}
+    \item Máy chủ xử lý từ chối yêu cầu.
+    \item Bảng điều khiển hiển thị thông báo lỗi.
+    \item Không gửi lệnh tới thiết bị.
+\end{itemize}
+\\
+
+&
+13. Kết thúc quá trình điều khiển thiết bị từ xa. \\
+\hline
+\end{tabularx}
+
+\textbf{Điều kiện sau khi thực hiện}
+
+\begin{itemize}
+\item Thiết bị được điều khiển thành công nếu yêu cầu hợp lệ.
+\item Trạng thái thiết bị được đồng bộ và hiển thị trên Bảng điều khiển.
+\item Lịch sử điều khiển từ xa được lưu trong cơ sở dữ liệu.
+\end{itemize}
+\subsection{Mục tiêu 2: Hệ thống phát hiện chính xác ít nhất 90\% các nguy cơ hỏa hoạn, gửi thông báo khẩn cấp đến người dùng trong vòng 2 giây và tự động kích hoạt servo xả nước khi điều kiện chữa cháy được thỏa mãn, hoàn thành trong 11 tuần triển khai dự án}
+
+\textbf{Cơ sở lý luận:} Mục tiêu này tập trung vào yếu tố an toàn, vì các sự cố cháy nổ trong nhà cần được phát hiện và cảnh báo càng sớm càng tốt để giảm thiểu thiệt hại về người và tài sản. Ngưỡng phát hiện chính xác ít nhất 90\% giúp hệ thống có khả năng nhận biết đáng tin cậy trong phạm vi mô phỏng, còn thời gian thông báo trong vòng 2 giây bảo đảm người dùng nhận được cảnh báo kịp thời để xử lý hoặc kích hoạt các biện pháp ứng phó.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.9\linewidth]{obj2.png}
+    \caption{Mục tiêu 2: Cảnh báo cháy và chữa cháy tự động}
+    \label{fig:placeholder}
+\end{figure}
+
+\subsubsection{Yêu cầu chức năng}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu chức năng cho Mục tiêu 2}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|p{1.2cm}|X|p{2cm}|p{2.2cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{UC} & \textbf{Mô tả} & \textbf{Ưu tiên} & \textbf{Lĩnh vực} \\
+\hline
+FREQ.11 & UC3 & Hệ thống phải thu thập dữ liệu nhiệt độ, khói hoặc ngọn lửa tại khu vực cần giám sát cháy. & Bắt buộc & IoT \\
+\hline
+FREQ.12 & UC3 & ESP32-S3 phải so sánh dữ liệu cảm biến với ngưỡng phát hiện cháy đã cấu hình. & Bắt buộc & IoT, Máy chủ xử lý \\
+\hline
+FREQ.13 & UC3 & Hệ thống phải gửi cảnh báo sự cố cháy đến Bảng điều khiển khi phát hiện dữ liệu vượt ngưỡng nguy hiểm. & Bắt buộc & Web, MQTT \\
+\hline
+FREQ.14 & UC3 & Hệ thống phải lưu sự kiện cảnh báo sự cố cháy vào cơ sở dữ liệu. & Nên có & Máy chủ xử lý \\
+\hline
+FREQ.15 & UC4 & ESP32-S3 phải nhận trạng thái cảnh báo cháy hợp lệ để kích hoạt quy trình chữa cháy tự động. & Bắt buộc & IoT \\
+\hline
+FREQ.16 & UC4 & ESP32-S3 phải tự động bật servo để mở cơ cấu xả nước khi điều kiện chữa cháy được thỏa mãn. & Bắt buộc & IoT \\
+\hline
+FREQ.17 & UC4 & Hệ thống phải gửi trạng thái kích hoạt servo và kết quả chữa cháy tự động lên Máy chủ xử lý. & Bắt buộc & MQTT \\
+\hline
+FREQ.18 & UC4 & Máy chủ xử lý phải lưu dữ liệu cảm biến, mức độ cảnh báo và trạng thái kích hoạt servo xả nước. & Nên có & Máy chủ xử lý \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{Trường hợp sử dụng UC3: Cảnh báo sự cố cháy}
+
+\textbf{Mã định danh:} UC3
+
+\textbf{Liên kết với mục tiêu:} Mục tiêu 2 -- Cảnh báo cháy và chữa cháy tự động.
+
+\textbf{Điều kiện tiên quyết:}
+\begin{itemize}
+    \item Các cảm biến phát hiện cháy đã được kết nối với ESP32-S3.
+    \item ESP32-S3 đã kết nối Wi-Fi và Máy chủ MQTT.
+    \item Máy chủ xử lý, cơ sở dữ liệu và Bảng điều khiển đang hoạt động bình thường.
+    \item Ngưỡng cảnh báo nhiệt độ, khói hoặc ngọn lửa đã được cấu hình.
+\end{itemize}
+
+\textbf{Tác nhân:}
+
+Người dùng, Cảm biến nhiệt độ, Cảm biến khói, Cảm biến ngọn lửa, ESP32-S3, Máy chủ MQTT, Máy chủ xử lý, Bảng điều khiển Web.
+
+\textbf{Mục đích:}
+
+Trường hợp sử dụng này cho phép hệ thống tự động giám sát nguy cơ cháy thông qua các cảm biến nhiệt độ, khói hoặc ngọn lửa. Khi phát hiện dữ liệu vượt quá ngưỡng nguy hiểm, ESP32-S3 tạo bản tin cảnh báo sự cố cháy và gửi đến Máy chủ xử lý thông qua Máy chủ MQTT. Máy chủ xử lý lưu sự kiện, phân loại mức độ nguy hiểm và đồng bộ cảnh báo theo thời gian thực lên Bảng điều khiển để người dùng kịp thời nắm bắt tình huống.
+
+\textbf{Liên kết tới yêu cầu chức năng:}
+
+FREQ.11 -- FREQ.14
+
+\begin{table}[H]
+\centering
+\small
+\caption{Luồng tương tác và phản hồi của UC3}
+\begin{tabularx}{\linewidth}{|p{4cm}|X|}
+\hline
+\textbf{Trường hợp sử dụng} &
+\textbf{Luồng tương tác và phản hồi} \\
+\hline
+
+\multirow{13}{=}{\parbox{3.2cm}{\centering\textit{UC3. Cảnh báo sự\\cố cháy}}}
+&
+1. Cảm biến thu thập dữ liệu nhiệt độ, khói hoặc ngọn lửa tại khu vực giám sát. \\
+
+&
+2. ESP32-S3 đọc dữ liệu cảm biến theo chu kỳ. \\
+
+&
+3. ESP32-S3 so sánh dữ liệu với ngưỡng phát hiện cháy đã cấu hình. \\
+
+&
+4. ESP32-S3 phát hiện dữ liệu vượt ngưỡng cảnh báo. \\
+
+&
+5. ESP32-S3 tạo bản tin cảnh báo cháy gồm loại sự cố, giá trị cảm biến, thời gian và mã thiết bị. \\
+
+&
+6. ESP32-S3 gửi bản tin cảnh báo đến Máy chủ MQTT. \\
+
+&
+7. Máy chủ xử lý nhận bản tin cảnh báo từ Máy chủ MQTT. \\
+
+&
+8. Máy chủ xử lý phân loại mức độ sự cố và lưu sự kiện vào cơ sở dữ liệu. \\
+
+&
+9. Máy chủ xử lý gửi cảnh báo theo thời gian thực tới Bảng điều khiển. \\
+
+&
+10. Bảng điều khiển hiển thị cảnh báo để người dùng kiểm tra và xử lý. \\
+
+&
+11. Nếu cảm biến gửi dữ liệu bất thường hoặc bị mất kết nối:
+\begin{itemize}
+    \item ESP32-S3 hoặc Máy chủ xử lý ghi nhận lỗi cảm biến.
+    \item Bảng điều khiển hiển thị cảnh báo yêu cầu kiểm tra cảm biến.
+    \item Hệ thống tiếp tục giám sát bằng các cảm biến còn hoạt động (nếu có).
+\end{itemize}
+\\
+
+&
+12. Kết thúc quá trình cảnh báo sự cố cháy. \\
+\hline
+
+\end{tabularx}
+\end{table}
+
+\textbf{Điều kiện sau khi thực hiện}
+
+\begin{itemize}
+    \item Người dùng nhận được cảnh báo sự cố cháy trong thời gian quy định.
+    \item Sự kiện cảnh báo được lưu vào cơ sở dữ liệu.
+    \item Bảng điều khiển hiển thị trạng thái cảnh báo và thông tin cảm biến liên quan.
+\end{itemize}
+
+\subsubsection{Trường hợp sử dụng UC4: Chữa cháy tự động}
+
+\textbf{Mã định danh:} UC4
+
+\textbf{Liên kết với mục tiêu:} Mục tiêu 2 -- Cảnh báo cháy và chữa cháy tự động.
+
+\textbf{Điều kiện tiên quyết:}
+\begin{itemize}
+    \item Hệ thống đã phát hiện cảnh báo cháy hợp lệ từ UC3.
+    \item Servo điều khiển cơ cấu xả nước đã được kết nối với ESP32-S3 và kiểm tra hoạt động.
+    \item ESP32-S3 đã kết nối với Máy chủ MQTT.
+    \item Máy chủ xử lý, Bảng điều khiển và cơ sở dữ liệu đang hoạt động bình thường.
+\end{itemize}
+
+\textbf{Tác nhân:}
+
+Người dùng, Cảm biến nhiệt độ, Cảm biến khói, Cảm biến ngọn lửa, ESP32-S3, Servo xả nước, Máy chủ MQTT, Máy chủ xử lý và Bảng điều khiển Web.
+
+\textbf{Mục đích:}
+
+Trường hợp sử dụng này cho phép hệ thống tự động kích hoạt cơ cấu chữa cháy sau khi cảnh báo cháy được xác nhận. ESP32-S3 điều khiển servo mở cơ cấu xả nước vào khu vực mô phỏng cháy, đồng thời gửi trạng thái kích hoạt và kết quả xử lý về Máy chủ xử lý thông qua Máy chủ MQTT. Máy chủ xử lý lưu sự kiện, cập nhật trạng thái chữa cháy và đồng bộ thông tin lên Bảng điều khiển theo thời gian thực.
+
+\textbf{Liên kết tới yêu cầu chức năng:}
+
+FREQ.15 -- FREQ.18
+
+\begin{table}[H]
+\centering
+\small
+\caption{Luồng tương tác và phản hồi của UC4}
+\begin{tabularx}{\linewidth}{|p{4cm}|X|}
+\hline
+\textbf{Trường hợp sử dụng} &
+\textbf{Luồng tương tác và phản hồi} \\
+\hline
+
+\multirow{13}{=}{\parbox{3.6cm}{\centering\textit{UC4. Chữa cháy\\tự động}}}
+&
+1. Hệ thống nhận trạng thái cảnh báo cháy hợp lệ từ UC3. \\
+
+&
+2. ESP32-S3 kiểm tra điều kiện kích hoạt chữa cháy tự động. \\
+
+&
+3. ESP32-S3 xác định kênh servo hoặc khu vực cần xả nước. \\
+
+&
+4. ESP32-S3 gửi tín hiệu điều khiển đến servo xả nước. \\
+
+&
+5. Servo quay đến góc đã cấu hình để mở cơ cấu xả nước. \\
+
+&
+6. Nước được xả vào khu vực mô phỏng cháy trong thời gian cấu hình. \\
+
+&
+7. ESP32-S3 ghi nhận trạng thái kích hoạt servo và thời điểm xả nước. \\
+
+&
+8. ESP32-S3 gửi trạng thái chữa cháy tự động đến Máy chủ MQTT. \\
+
+&
+9. Máy chủ xử lý lưu sự kiện chữa cháy và đồng bộ trạng thái lên Bảng điều khiển. \\
+
+&
+10. Bảng điều khiển hiển thị trạng thái servo, thời điểm xả nước và kết quả xử lý. \\
+
+&
+11. Người dùng kiểm tra khu vực xảy ra sự cố và xác nhận trạng thái an toàn trên Bảng điều khiển. \\
+
+&
+12. Nếu servo xả nước không kích hoạt được:
+\begin{itemize}
+    \item ESP32-S3 gửi trạng thái lỗi thiết bị tới Máy chủ xử lý.
+    \item Máy chủ xử lý lưu lỗi và gửi cảnh báo bổ sung tới Bảng điều khiển.
+    \item Người dùng được yêu cầu kiểm tra phần cứng hoặc xử lý thủ công.
+\end{itemize}
+\\
+
+&
+13. Kết thúc quá trình chữa cháy tự động. \\
+\hline
+
+\end{tabularx}
+\end{table}
+
+\textbf{Điều kiện sau khi thực hiện}
+
+\begin{itemize}
+    \item Servo xả nước được kích hoạt khi điều kiện chữa cháy tự động được thỏa mãn.
+    \item Trạng thái kích hoạt servo được gửi tới Máy chủ xử lý và hiển thị trên Bảng điều khiển.
+    \item Sự kiện cháy, dữ liệu cảm biến và trạng thái chữa cháy tự động được lưu trong cơ sở dữ liệu.
+\end{itemize}
+
+\subsection{Mục tiêu 3: Hệ thống thu thập tối thiểu 90\% dữ liệu từ các cảm biến môi trường với thời gian cập nhật không quá 2 giây, đồng thời hỗ trợ truy vấn dữ liệu hiện tại, lịch sử với thời gian phản hồi dưới 5 giây, hoàn thành trong 11 tuần triển khai dự án}
+
+\textbf{Cơ sở lý luận:} Mục tiêu này nhằm bảo đảm hệ thống cung cấp dữ liệu môi trường đầy đủ, kịp thời và có khả năng truy xuất lại khi cần phân tích xu hướng hoặc kiểm tra sự kiện đã xảy ra. Tỷ lệ thu thập tối thiểu 90\% giúp duy trì tính liên tục của dữ liệu cảm biến, thời gian cập nhật không quá 2 giây hỗ trợ giám sát gần thời gian thực, còn thời gian truy vấn dưới 5 giây giúp Bảng điều khiển đáp ứng tốt nhu cầu theo dõi và ra quyết định của người dùng.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\linewidth]{obj3.png}
+    \caption{Mục tiêu 3: Giám sát môi trường và hỗ trợ truy vấn thông minh}
+    \label{fig:placeholder}
+\end{figure}
+\subsubsection{Yêu cầu chức năng}
+
+\renewcommand{\arraystretch}{1.3}
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu chức năng cho Mục tiêu 3}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|p{1.2cm}|X|p{2cm}|p{2.2cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{UC} & \textbf{Mô tả} & \textbf{Ưu tiên} & \textbf{Lĩnh vực} \\
+\hline
+FREQ.19 & UC5 & ESP32-S3 phải thu thập dữ liệu môi trường từ các cảm biến được lắp đặt. & Bắt buộc & IoT \\
+\hline
+FREQ.20 & UC5 & Hệ thống phải gửi dữ liệu môi trường từ ESP32-S3 lên Máy chủ xử lý thông qua MQTT. & Bắt buộc & MQTT \\
+\hline
+FREQ.21 & UC5 & Máy chủ xử lý phải lưu dữ liệu môi trường vào cơ sở dữ liệu để phục vụ theo dõi và truy vấn. & Bắt buộc & Máy chủ xử lý \\
+\hline
+FREQ.22 & UC6 & Bảng điều khiển phải hiển thị dữ liệu môi trường mới nhất theo thời gian thực. & Bắt buộc & Web \\
+\hline
+FREQ.23 & UC6 & Người dùng phải có khả năng xem thời điểm cập nhật và trạng thái dữ liệu cảm biến. & Nên có & Web \\
+\hline
+FREQ.24 & UC7 & Người dùng phải có khả năng truy vấn dữ liệu môi trường lịch sử theo khoảng thời gian. & Nên có & Web, Máy chủ xử lý \\
+\hline
+FREQ.25 & UC7 & Máy chủ xử lý phải trả kết quả truy vấn lịch sử môi trường trong thời gian phản hồi quy định. & Nên có & Máy chủ xử lý \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsubsection{Trường hợp sử dụng UC5: Giám sát các chỉ số môi trường trong nhà}
+
+\textbf{Mã định danh:} UC5
+
+\textbf{Liên kết với mục tiêu:} Mục tiêu 3 -- Giám sát môi trường và hỗ trợ truy vấn thông minh.
+
+\textbf{Điều kiện tiên quyết:}
+\begin{itemize}
+    \item Các cảm biến môi trường (ví dụ: DHT11) đã được kết nối với ESP32-S3.
+    \item ESP32-S3 đã kết nối với Máy chủ MQTT.
+    \item Máy chủ xử lý, cơ sở dữ liệu và Bảng điều khiển đang hoạt động bình thường.
+\end{itemize}
+
+\textbf{Tác nhân:}
+
+Cảm biến môi trường, ESP32-S3, Máy chủ MQTT, Máy chủ xử lý, Cơ sở dữ liệu và Bảng điều khiển Web.
+
+\textbf{Mục đích:}
+
+Trường hợp sử dụng này cho phép hệ thống thu thập dữ liệu từ các cảm biến môi trường trong nhà, chuẩn hóa và truyền dữ liệu đến Máy chủ xử lý thông qua Máy chủ MQTT. Dữ liệu được kiểm tra, lưu trữ trong cơ sở dữ liệu và đồng bộ theo thời gian thực lên Bảng điều khiển để người dùng giám sát các chỉ số môi trường và phục vụ truy vấn lịch sử.
+
+\textbf{Liên kết tới yêu cầu chức năng:}
+
+FREQ.19 -- FREQ.21
+
+\begin{table}[H]
+\centering
+\small
+\caption{Luồng tương tác và phản hồi của UC5}
+\begin{tabularx}{\linewidth}{|p{4cm}|X|}
+\hline
+\textbf{Trường hợp sử dụng} &
+\textbf{Luồng tương tác và phản hồi} \\
+\hline
+
+\multirow{13}{=}{\parbox{3.6cm}{\centering\textit{UC5. Giám sát các chỉ số\\môi trường trong nhà}}}
+&
+1. Cảm biến đo các chỉ số môi trường trong nhà. \\
+
+&
+2. ESP32-S3 đọc dữ liệu từ các cảm biến theo chu kỳ. \\
+
+&
+3. ESP32-S3 chuẩn hóa dữ liệu đo được. \\
+
+&
+4. ESP32-S3 gửi dữ liệu tới Máy chủ MQTT. \\
+
+&
+5. Máy chủ xử lý nhận dữ liệu cảm biến từ Máy chủ MQTT. \\
+
+&
+6. Máy chủ xử lý kiểm tra tính hợp lệ của dữ liệu. \\
+
+&
+7. Máy chủ xử lý lưu dữ liệu môi trường vào cơ sở dữ liệu. \\
+
+&
+8. Máy chủ xử lý đồng bộ dữ liệu mới tới Bảng điều khiển theo thời gian thực nếu có kết nối. \\
+
+&
+9. Nếu dữ liệu cảm biến không hợp lệ hoặc mất kết nối:
+\begin{itemize}
+    \item Máy chủ xử lý ghi nhận lỗi và không lưu dữ liệu.
+    \item Bảng điều khiển hiển thị thông báo mất dữ liệu hoặc lỗi cảm biến.
+    \item Hệ thống tiếp tục chờ chu kỳ thu thập dữ liệu tiếp theo.
+\end{itemize}
+\\
+
+&
+10. Kết thúc quá trình giám sát môi trường. \\
+\hline
+\hline
+
+\end{tabularx}
+\end{table}
+
+\textbf{Điều kiện sau khi thực hiện}
+
+\begin{itemize}
+    \item Dữ liệu môi trường được thu thập và lưu trữ thành công nếu hợp lệ.
+    \item Bảng điều khiển hiển thị dữ liệu môi trường theo thời gian thực.
+    \item Dữ liệu lịch sử được lưu trong cơ sở dữ liệu để phục vụ truy vấn và thống kê.
+\end{itemize}
+
+\subsubsection{Trường hợp sử dụng UC6: Hiển thị thông tin môi trường}
+
+\textbf{Mã định danh:} UC6
+
+\textbf{Liên kết với mục tiêu:} Mục tiêu 3 -- Giám sát môi trường và hỗ trợ truy vấn thông minh.
+
+\textbf{Điều kiện tiên quyết:}
+\begin{itemize}
+    \item Người dùng đã truy cập Bảng điều khiển.
+    \item Hệ thống đã có dữ liệu môi trường được thu thập từ các cảm biến.
+    \item Máy chủ xử lý và cơ sở dữ liệu đang hoạt động bình thường.
+\end{itemize}
+
+\textbf{Tác nhân:}
+
+Người dùng, Bảng điều khiển Web, Máy chủ xử lý và Cơ sở dữ liệu.
+
+\textbf{Mục đích:}
+
+Trường hợp sử dụng này cho phép người dùng theo dõi các chỉ số môi trường trong nhà thông qua Bảng điều khiển. Hệ thống truy xuất dữ liệu môi trường mới nhất từ cơ sở dữ liệu, gửi tới giao diện Web và hiển thị các thông tin như nhiệt độ, độ ẩm, trạng thái dữ liệu và thời điểm cập nhật gần nhất nhằm hỗ trợ giám sát theo thời gian thực.
+
+\textbf{Liên kết tới yêu cầu chức năng:}
+
+FREQ.22 -- FREQ.23
+
+\begin{table}[H]
+\centering
+\small
+\caption{Luồng tương tác và phản hồi của UC6}
+\begin{tabularx}{\linewidth}{|p{4cm}|X|}
+\hline
+\textbf{Trường hợp sử dụng} &
+\textbf{Luồng tương tác và phản hồi} \\
+\hline
+
+\multirow{13}{=}{\parbox{3.6cm}{\centering\textit{UC6. Hiển thị thông \\tin môi trường}}}
+&
+1. Người dùng mở màn hình giám sát môi trường trên Bảng điều khiển. \\
+
+&
+2. Bảng điều khiển gửi yêu cầu lấy dữ liệu môi trường mới nhất tới Máy chủ xử lý. \\
+
+&
+3. Máy chủ xử lý truy vấn dữ liệu môi trường mới nhất từ cơ sở dữ liệu. \\
+
+&
+4. Máy chủ xử lý trả kết quả về Bảng điều khiển. \\
+
+&
+5. Bảng điều khiển hiển thị các chỉ số môi trường gồm nhiệt độ, độ ẩm, trạng thái dữ liệu và thời điểm cập nhật gần nhất. \\
+
+&
+6. Người dùng theo dõi thông tin môi trường được hiển thị. \\
+
+&
+7. Nếu không tìm thấy dữ liệu môi trường hợp lệ:
+\begin{itemize}
+    \item Máy chủ xử lý trả về thông báo không có dữ liệu.
+    \item Bảng điều khiển hiển thị thông báo dữ liệu chưa khả dụng.
+    \item Người dùng có thể tải lại trang hoặc kiểm tra trạng thái cảm biến.
+\end{itemize}
+\\
+
+&
+8. Kết thúc quá trình hiển thị thông tin môi trường. \\
+\hline
+
+\end{tabularx}
+\end{table}
+
+\textbf{Điều kiện sau khi thực hiện}
+
+\begin{itemize}
+    \item Người dùng xem được thông tin môi trường hiện tại nếu dữ liệu khả dụng.
+    \item Bảng điều khiển hiển thị dữ liệu môi trường rõ ràng và trực quan.
+    \item Trường hợp không có dữ liệu, hệ thống thông báo phù hợp để người dùng kiểm tra lại.
+\end{itemize}
+\subsubsection{Trường hợp sử dụng UC7: Truy vấn dữ liệu môi trường lịch sử}
+
+\textbf{Mã định danh:} UC7
+
+\textbf{Liên kết với mục tiêu:} Mục tiêu 3 -- Giám sát môi trường và hỗ trợ truy vấn thông minh.
+
+\textbf{Điều kiện tiên quyết:}
+\begin{itemize}
+    \item Người dùng đã truy cập Bảng điều khiển.
+    \item Cơ sở dữ liệu đã lưu dữ liệu môi trường trong quá trình vận hành.
+    \item Máy chủ xử lý cung cấp API truy vấn dữ liệu lịch sử.
+\end{itemize}
+
+\textbf{Tác nhân:}
+
+Người dùng, Bảng điều khiển Web, Máy chủ xử lý và Cơ sở dữ liệu.
+
+\textbf{Mục đích:}
+
+Trường hợp sử dụng này cho phép người dùng truy vấn dữ liệu môi trường đã được lưu trữ theo khoảng thời gian hoặc loại dữ liệu mong muốn. Máy chủ xử lý tiếp nhận yêu cầu, truy vấn dữ liệu từ cơ sở dữ liệu và trả kết quả về Bảng điều khiển để hiển thị dưới dạng bảng hoặc biểu đồ, hỗ trợ theo dõi xu hướng biến đổi của các chỉ số môi trường và đánh giá các sự kiện đã xảy ra.
+
+\textbf{Liên kết tới yêu cầu chức năng:}
+
+FREQ.24 -- FREQ.25
+
+\begin{table}[H]
+\centering
+\small
+\caption{Luồng tương tác và phản hồi của UC7}
+\begin{tabularx}{\linewidth}{|p{4cm}|X|}
+\hline
+\textbf{Trường hợp sử dụng} &
+\textbf{Luồng tương tác và phản hồi} \\
+\hline
+
+\multirow{13}{=}{\parbox{3.8cm}{\centering\textit{UC6. Truy vấn dữ\\liệu môi trường lịch sử}}}
+&
+1. Người dùng mở chức năng truy vấn dữ liệu môi trường lịch sử trên Bảng điều khiển. \\
+
+&
+2. Người dùng chọn loại dữ liệu và khoảng thời gian cần truy vấn. \\
+
+&
+3. Bảng điều khiển gửi yêu cầu truy vấn tới Máy chủ xử lý. \\
+
+&
+4. Máy chủ xử lý kiểm tra tính hợp lệ của các tham số truy vấn. \\
+
+&
+5. Máy chủ xử lý truy vấn dữ liệu từ cơ sở dữ liệu. \\
+
+&
+6. Máy chủ xử lý trả kết quả truy vấn về Bảng điều khiển. \\
+
+&
+7. Bảng điều khiển hiển thị kết quả dưới dạng bảng hoặc biểu đồ. \\
+
+&
+8. Người dùng xem kết quả và có thể điều chỉnh điều kiện truy vấn nếu cần. \\
+
+&
+9. Nếu khoảng thời gian truy vấn không hợp lệ hoặc không có dữ liệu:
+\begin{itemize}
+    \item Máy chủ xử lý trả về thông báo lỗi hoặc kết quả rỗng.
+    \item Bảng điều khiển hiển thị thông báo và hướng dẫn người dùng điều chỉnh điều kiện truy vấn.
+\end{itemize}
+\\
+
+&
+10. Kết thúc quá trình truy vấn dữ liệu môi trường lịch sử. \\
+\hline
+
+\end{tabularx}
+\end{table}
+
+\textbf{Điều kiện sau khi thực hiện}
+
+\begin{itemize}
+    \item Người dùng truy vấn được dữ liệu môi trường theo điều kiện đã chọn nếu dữ liệu tồn tại.
+    \item Kết quả được hiển thị rõ ràng dưới dạng bảng hoặc biểu đồ.
+    \item Trường hợp không có dữ liệu phù hợp, hệ thống thông báo để người dùng điều chỉnh điều kiện truy vấn.
+\end{itemize}
+
+
+\section{Yêu cầu phi chức năng}
+
+Phần này mô tả các yêu cầu phi chức năng của hệ thống theo hướng đặc tả IEEE. Các yêu cầu được tổ chức theo các nhóm chất lượng lớn, mỗi nhóm trình bày lý do, động lực thiết kế, các yêu cầu được tinh chỉnh và các tiêu chí đo lường tương ứng.
+
+\subsection{Tổng hợp yêu cầu phi chức năng}
+
+
+\renewcommand{\arraystretch}{1.3}
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu phi chức năng -- Hiệu năng}\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.5cm}|p{1.7cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực}\\
+\hline
+NFREQ.01 & Thiết bị nhúng phải nhận diện lệnh giọng nói cục bộ trong thời gian không vượt quá 1 giây kể từ khi người dùng hoàn tất phát biểu đối với tập lệnh đã hỗ trợ. & Hiệu năng & Bắt buộc & IoT, TinyML\\
+\hline
+NFREQ.02 & Thiết bị IoT phải nhận được lệnh điều khiển trong thời gian không vượt quá 2 giây sau khi Máy chủ xử lý xử lý thành công. & Hiệu năng & Bắt buộc & IoT, Máy chủ xử lý\\
+\hline
+NFREQ.03 & Trạng thái thiết bị phải được cập nhật lên Bảng điều khiển trong thời gian không vượt quá 1 giây kể từ khi có thay đổi. & Thời gian thực & Bắt buộc & Web, IoT\\
+\hline
+NFREQ.04 & Các truy vấn lịch sử điều khiển và dữ liệu cảm biến phải có thời gian phản hồi dưới 5 giây đối với tập dữ liệu thông thường. & Hiệu năng truy xuất & Nên có & Máy chủ xử lý, Database\\
+\hline
+NFREQ.05 & Hệ thống phải hỗ trợ tối thiểu 50 yêu cầu đồng thời mà không gây suy giảm đáng kể hiệu năng. & Khả năng tải & Nên có & Máy chủ xử lý\\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Reliability
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu phi chức năng -- Độ tin cậy}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.5cm}|p{1.7cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực}\\
+\hline
+NFREQ.06 & Hệ thống phải có khả năng hoạt động liên tục 24 giờ mỗi ngày và 7 ngày mỗi tuần. & Độ tin cậy & Bắt buộc & System\\
+\hline
+NFREQ.07 & ESP32-S3 phải tự động kết nối lại Wi-Fi và máy chủ MQTT khi xảy ra mất kết nối. & Khôi phục kết nối & Bắt buộc & IoT, MQTT\\
+\hline
+NFREQ.08 & Hệ thống phải khôi phục hoạt động bình thường sau khi xảy ra lỗi mạng hoặc khởi động lại thiết bị. & Phục hồi lỗi & Bắt buộc & System\\
+\hline
+NFREQ.09 & Hệ thống phải phát hiện và thông báo khi thiết bị ngoại tuyến. & Giám sát kết nối & Bắt buộc & Web, IoT\\
+\hline
+NFREQ.10 & Máy chủ xử lý và máy chủ MQTT phải đạt tỷ lệ hoạt động tối thiểu 99\%. & Tính sẵn sàng & Nên có & Máy chủ xử lý, MQTT\\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Security
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu phi chức năng -- Bảo mật}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.5cm}|p{1.7cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực}\\
+\hline
+NFREQ.11 & Người dùng phải đăng nhập trước khi truy cập các chức năng điều khiển hệ thống. & Xác thực & Bắt buộc & Security\\
+\hline
+NFREQ.12 & Hệ thống phải sử dụng JWT Token để xác thực các yêu cầu từ phía người dùng. & Quản lý phiên & Bắt buộc & Security\\
+\hline
+NFREQ.13 & Dữ liệu truyền giữa người dùng, Máy chủ xử lý và máy chủ MQTT phải được bảo vệ bằng HTTPS hoặc TLS. & Bảo mật truyền tải & Bắt buộc & Security, MQTT\\
+\hline
+NFREQ.14 & Mật khẩu phải được lưu trữ dưới dạng mã hóa và không được lưu dưới dạng văn bản thuần. & Bảo vệ dữ liệu & Bắt buộc & Security, Database\\
+\hline
+NFREQ.15 & Chỉ những người dùng được cấp quyền mới có thể điều khiển hoặc quản lý thiết bị. & Phân quyền & Bắt buộc & Security\\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Maintainability & Extensibility
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu phi chức năng -- Bảo mật}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.5cm}|p{1.7cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực}\\
+\hline
+NFREQ.16 & Hệ thống Máy chủ xử lý phải được xây dựng theo mô hình Layered Architecture. & Bảo trì & Bắt buộc & Máy chủ xử lý\\
+\hline
+NFREQ.17 & Mã nguồn phải được thiết kế theo các nguyên tắc SOLID nhằm tăng khả năng bảo trì và mở rộng. & Bảo trì & Nên có & Software Design\\
+\hline
+NFREQ.18 & Hệ thống phải hỗ trợ bổ sung các thiết bị IoT mới mà không cần thay đổi kiến trúc tổng thể. & Mở rộng thiết bị & Bắt buộc & IoT\\
+\hline
+NFREQ.19 & Hệ thống phải cho phép tích hợp thêm các loại cảm biến khác ngoài DHT11. & Mở rộng cảm biến & Nên có & IoT\\
+\hline
+NFREQ.20 & Hệ thống phải hỗ trợ quản lý nhiều người dùng và nhiều thiết bị trong tương lai. & Khả năng mở rộng & Nên có & Máy chủ xử lý, Web\\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Usability
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu phi chức năng -- Khả năng bảo trì và mở rộng}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.5cm}|p{1.7cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực}\\
+\hline
+NFREQ.21 & Bảng điều khiển phải có giao diện đơn giản, dễ sử dụng và dễ quan sát. & Khả năng sử dụng & Bắt buộc & Web\\
+\hline
+NFREQ.22 & Người dùng có thể sử dụng giọng nói thay cho thao tác thủ công trên giao diện. & Trải nghiệm người dùng & Nên có & Web, TinyML\\
+\hline
+NFREQ.23 & Trạng thái bật/tắt hoặc kết nối của từng thiết bị phải được hiển thị trực quan. & Khả năng quan sát & Bắt buộc & Web\\
+\hline
+NFREQ.24 & Hệ thống phải hoạt động trên các trình duyệt hiện đại như Google Chrome, Microsoft Edge và Mozilla Firefox. & Tương thích & Nên có & Web\\
+\hline
+NFREQ.25 & Bảng điều khiển phải hoạt động trên máy tính và thiết bị di động. & Tương thích thiết bị & Nên có & Web\\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Data Management
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu phi chức năng -- Quản lý dữ liệu}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.5cm}|p{1.7cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực}\\
+\hline
+NFREQ.26 & Hệ thống phải lưu lại lịch sử các thao tác điều khiển thiết bị. & Dữ liệu lịch sử & Bắt buộc & Database\\
+\hline
+NFREQ.27 & Hệ thống phải lưu dữ liệu nhiệt độ và các dữ liệu môi trường khác. & Dữ liệu cảm biến & Bắt buộc & Database, IoT\\
+\hline
+NFREQ.28 & Các sự kiện quan trọng như đăng nhập, lỗi kết nối hoặc điều khiển thiết bị phải được ghi nhận. & Ghi nhật ký & Nên có & Máy chủ xử lý\\
+\hline
+NFREQ.29 & Hệ thống phải hỗ trợ sao lưu và phục hồi dữ liệu khi cần thiết. & An toàn dữ liệu & Nên có & Database\\
+\hline
+NFREQ.30 & Dữ liệu hiển thị trên Bảng điều khiển phải phản ánh trạng thái mới nhất của hệ thống. & Đồng bộ dữ liệu & Bắt buộc & Web, Máy chủ xử lý\\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Integration
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu phi chức năng -- Tích hợp và tài liệu}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.5cm}|p{1.7cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực}\\
+\hline
+NFREQ.31 & Các thành phần Máy chủ xử lý, Bảng điều khiển, máy chủ MQTT và ESP32-S3 phải giao tiếp thông qua giao thức và định dạng dữ liệu được mô tả rõ ràng. & Khả năng tích hợp & Bắt buộc & System Integration\\
+\hline
+NFREQ.32 & Các API điều khiển và truy vấn dữ liệu phải có quy ước đặt tên, mã lỗi và cấu trúc phản hồi thống nhất. & Khả năng tương tác & Nên có & API REST\\
+\hline
+NFREQ.33 & Hệ thống phải cho phép thay đổi ngưỡng cảnh báo hoặc cấu hình thiết bị mà không cần chỉnh sửa mã nguồn lõi. & Khả năng tiến hóa & Nên có & Configuration\\
+\hline
+NFREQ.34 & Các thành phần phần mềm phải được thiết kế tách rời để có thể thay thế máy chủ MQTT, cơ sở dữ liệu hoặc mô-đun cảm biến với chi phí chỉnh sửa hợp lý. & Khả năng tiến hóa & Nên có & Architecture\\
+\hline
+NFREQ.35 & Hệ thống phải có tài liệu cài đặt, cấu hình và vận hành tối thiểu để hỗ trợ bảo trì sau khi bàn giao. & Khả năng vận hành & Nên có & Documentation\\
+\hline
+\end{tabularx}
+\end{table}
+\subsection{Yêu cầu về hiệu năng}
+
+\textbf{Lý do:} Khả năng phản hồi nhanh giúp hệ thống điều khiển thiết bị, giám sát cảm biến và cảnh báo sự cố hoạt động kịp thời trong bối cảnh Smart Home.
+
+\textbf{Động lực:} Đảm bảo lệnh điều khiển bằng giọng nói, thao tác Web, đồng bộ trạng thái và truy vấn dữ liệu không gây độ trễ khó chịu cho người dùng.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} NFREQ.01, NFREQ.02, NFREQ.03, NFREQ.04, NFREQ.05.
+
+\textbf{Mức độ liên quan:} Quan trọng đối với các chức năng điều khiển thiết bị, cảnh báo cháy và cập nhật Bảng điều khiển theo thời gian thực.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo hiệu năng}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Đo thời gian nhận diện giọng nói; đo thời gian gửi lệnh từ Máy chủ xử lý đến ESP32-S3; đo thời gian cập nhật Bảng điều khiển; kiểm thử truy vấn dữ liệu lịch sử; kiểm thử tải với nhiều yêu cầu đồng thời. \\
+\hline
+\textbf{Chiến lược} & Tối ưu xử lý cục bộ trên ESP32-S3; sử dụng MQTT cho trao đổi bản tin nhẹ; dùng WebSocket cho dữ liệu thời gian thực; tối ưu truy vấn cơ sở dữ liệu; giới hạn dữ liệu trả về khi truy vấn lịch sử. \\
+\hline
+\textbf{Thước đo} & Thời gian nhận diện lệnh không quá 1 giây; thời gian phản hồi điều khiển không quá 2 giây; thời gian cập nhật trạng thái không quá 1 giây; truy vấn dữ liệu thông thường dưới 5 giây; hỗ trợ tối thiểu 50 yêu cầu đồng thời. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về độ tin cậy và tính sẵn sàng}
+
+\textbf{Lý do:} Hệ thống cần duy trì hoạt động ổn định để người dùng có thể điều khiển thiết bị, theo dõi trạng thái và nhận cảnh báo khi có sự cố.
+
+\textbf{Động lực:} Giảm rủi ro gián đoạn do mất Wi-Fi, mất MQTT, khởi động lại thiết bị hoặc lỗi kết nối giữa các thành phần.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} NFREQ.06, NFREQ.07, NFREQ.08, NFREQ.09, NFREQ.10.
+
+\textbf{Mức độ liên quan:} Đặc biệt quan trọng vì hệ thống có chức năng cảnh báo sự cố cháy, chữa cháy tự động và giám sát thiết bị theo thời gian thực.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo độ tin cậy và tính sẵn sàng}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Theo dõi trạng thái kết nối thiết bị; kiểm thử mất Wi-Fi và MQTT; ghi nhận thời điểm thiết bị ngoại tuyến; đánh giá khả năng phục hồi sau khởi động lại. \\
+\hline
+\textbf{Chiến lược} & Cấu hình tự động kết nối lại; sử dụng heartbeat hoặc bản tin trạng thái; lưu trạng thái gần nhất; hiển thị cảnh báo khi thiết bị ngoại tuyến; tách Máy chủ xử lý và máy chủ MQTT thành các thành phần độc lập. \\
+\hline
+\textbf{Thước đo} & Hệ thống hoạt động 24/7 trong điều kiện triển khai; Máy chủ xử lý và máy chủ MQTT đạt tối thiểu 99\% thời gian hoạt động; thiết bị tự động kết nối lại sau lỗi mạng; Bảng điều khiển thông báo khi thiết bị ngoại tuyến. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về bảo mật}
+
+\textbf{Lý do:} Hệ thống có khả năng điều khiển thiết bị vật lý nên cần bảo vệ tài khoản, dữ liệu người dùng và các API điều khiển khỏi truy cập trái phép.
+
+\textbf{Động lực:} Ngăn chặn người dùng không hợp lệ điều khiển thiết bị, xem dữ liệu riêng tư hoặc thay đổi cấu hình hệ thống.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} NFREQ.11, NFREQ.12, NFREQ.13, NFREQ.14, NFREQ.15.
+
+\textbf{Mức độ liên quan:} Bắt buộc đối với các chức năng điều khiển từ xa, quản lý thiết bị, xem dữ liệu lịch sử và cảnh báo sự cố.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo bảo mật}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Kiểm tra đăng nhập; kiểm tra JWT Token; kiểm tra phân quyền API; rà soát cách lưu mật khẩu; kiểm tra cấu hình HTTPS hoặc TLS khi triển khai. \\
+\hline
+\textbf{Chiến lược} & Sử dụng JWT cho xác thực; mã hóa mật khẩu bằng thuật toán băm an toàn; phân quyền các API điều khiển; bảo vệ dữ liệu truyền tải; không gửi dữ liệu âm thanh ra dịch vụ nhận dạng bên ngoài. \\
+\hline
+\textbf{Thước đo} & Người dùng chưa xác thực không truy cập được chức năng điều khiển; mật khẩu không lưu dạng văn bản thuần; API điều khiển yêu cầu quyền hợp lệ; dữ liệu truyền tải được bảo vệ bằng HTTPS hoặc TLS. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về khả năng tiến hóa}
+
+\textbf{Lý do:} Khả năng tiến hóa giúp hệ thống chịu được thay đổi và dễ thích nghi khi yêu cầu mới, thiết bị mới hoặc công nghệ mới được bổ sung.
+
+\textbf{Động lực:} Đảm bảo hệ thống có thể mở rộng thêm chức năng, cảm biến, thiết bị IoT, máy chủ MQTT, cơ sở dữ liệu hoặc công nghệ nhận diện giọng nói ở giai đoạn sau với chi phí hợp lý và minh bạch.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} NFREQ.16, NFREQ.17, NFREQ.18, NFREQ.19, NFREQ.20, NFREQ.33, NFREQ.34, NFREQ.35.
+
+\textbf{Mức độ liên quan:} Quan trọng đối với hệ thống có vòng đời dài và có khả năng mở rộng từ mô hình đồ án thành nền tảng Smart Home hoàn chỉnh.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo khả năng mở rộng và phát triển}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Đặc tả nhu cầu tiến hóa; đánh giá tác động khi thêm thiết bị hoặc cảm biến mới; cân nhắc đánh đổi giữa hiệu năng, chi phí và khả năng mở rộng; rà soát sự phụ thuộc giữa các mô-đun. \\
+\hline
+\textbf{Chiến lược} & Áp dụng chuẩn mở và giao diện rõ ràng; thiết kế các thành phần loose-coupled; duy trì kiến trúc phân lớp; tách cấu hình khỏi mã nguồn lõi; bảo toàn khả năng phục hồi của nền tảng khi thay đổi thành phần. \\
+\hline
+\textbf{Thước đo} & Có thể thêm thiết bị IoT mới mà không thay đổi kiến trúc tổng thể; có thể thêm cảm biến ngoài DHT11; có thể thay đổi ngưỡng cảnh báo bằng cấu hình; có tài liệu cài đặt và vận hành tối thiểu. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về khả năng sử dụng}
+
+\textbf{Lý do:} Người dùng cần tương tác với hệ thống dễ dàng, đặc biệt trong các tình huống điều khiển thiết bị hoặc nhận cảnh báo khẩn cấp.
+
+\textbf{Động lực:} Giảm thao tác phức tạp, giúp người dùng nhanh chóng nhận biết trạng thái thiết bị, dữ liệu môi trường và cảnh báo sự cố.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} NFREQ.21, NFREQ.22, NFREQ.23, NFREQ.24, NFREQ.25.
+
+\textbf{Mức độ liên quan:} Quan trọng với hộ gia đình, người bận rộn, người cao tuổi và người dùng không chuyên về kỹ thuật.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo khả năng sử dụng}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Kiểm tra khả năng quan sát Bảng điều khiển; kiểm thử thao tác bật/tắt thiết bị; kiểm thử hiển thị cảnh báo; kiểm tra giao diện trên nhiều trình duyệt và thiết bị. \\
+\hline
+\textbf{Chiến lược} & Thiết kế giao diện đơn giản; dùng biểu tượng và màu sắc trạng thái rõ ràng; hỗ trợ điều khiển bằng giọng nói; thiết kế responsive cho máy tính và thiết bị di động. \\
+\hline
+\textbf{Thước đo} & Người dùng quan sát được trạng thái bật/tắt hoặc kết nối; Bảng điều khiển hoạt động trên Chrome, Edge và Firefox; giao diện hiển thị được trên máy tính và thiết bị di động; cảnh báo sự cố được trình bày nổi bật. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về quản lý dữ liệu và ghi nhật ký}
+
+\textbf{Lý do:} Dữ liệu lịch sử và nhật ký giúp người dùng kiểm tra hoạt động, truy vết sự cố và đánh giá chất lượng vận hành của hệ thống.
+
+\textbf{Động lực:} Hỗ trợ xem lại lịch sử điều khiển, dữ liệu cảm biến, sự kiện đăng nhập, lỗi kết nối và cảnh báo sự cố cháy hoặc chữa cháy tự động.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} NFREQ.26, NFREQ.27, NFREQ.28, NFREQ.29, NFREQ.30.
+
+\textbf{Mức độ liên quan:} Cần thiết cho bảo trì, kiểm thử, báo cáo đồ án và phân tích sự cố sau khi hệ thống vận hành.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo quản lý dữ liệu và ghi nhật ký}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Ghi lịch sử điều khiển; lưu dữ liệu cảm biến; ghi nhận đăng nhập, lỗi kết nối và cảnh báo; kiểm thử sao lưu và phục hồi dữ liệu; kiểm tra đồng bộ Bảng điều khiển. \\
+\hline
+\textbf{Chiến lược} & Lưu dữ liệu vào cơ sở dữ liệu; chuẩn hóa cấu trúc bản ghi; bổ sung thời gian, mã thiết bị và kết quả xử lý; hỗ trợ sao lưu dữ liệu; đồng bộ dữ liệu mới nhất qua WebSocket. \\
+\hline
+\textbf{Thước đo} & Lịch sử điều khiển và dữ liệu cảm biến được lưu thành công; sự kiện quan trọng có log; dữ liệu có thể sao lưu và phục hồi khi cần; Bảng điều khiển phản ánh trạng thái mới nhất của hệ thống. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về khả năng tương tác}
+
+\textbf{Lý do:} Khả năng tương tác giúp các thành phần Web, Máy chủ xử lý, máy chủ MQTT, ESP32-S3 và cơ sở dữ liệu phối hợp ổn định, đồng thời giảm lỗi tích hợp khi mở rộng hệ thống.
+
+\textbf{Động lực:} Đảm bảo dữ liệu điều khiển, dữ liệu cảm biến và cảnh báo được trao đổi theo định dạng nhất quán giữa các thành phần khác nhau.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} NFREQ.31, NFREQ.32.
+
+\textbf{Mức độ liên quan:} Quan trọng khi hệ thống tích hợp nhiều công nghệ như Spring Boot, MQTT, WebSocket, ESP32-S3, TinyML và cơ sở dữ liệu quan hệ.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo khả năng tương tác}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Đặc tả topic MQTT; đặc tả nội dung bản tin dữ liệu; kiểm tra API REST; kiểm tra mã lỗi và phản hồi; kiểm thử luồng tích hợp từ Bảng điều khiển đến ESP32-S3. \\
+\hline
+\textbf{Chiến lược} & Sử dụng giao thức phổ biến như API REST, MQTT và WebSocket; thống nhất định dạng JSON cho bản tin; đặt tên API và topic rõ ràng; chuẩn hóa phản hồi lỗi. \\
+\hline
+\textbf{Thước đo} & Các thành phần trao đổi dữ liệu đúng định dạng; API có cấu trúc phản hồi thống nhất; bản tin MQTT có topic và nội dung bản tin rõ ràng; hệ thống giảm lỗi tích hợp khi thêm mô-đun mới. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Các yêu cầu khác}
+
+Phần này mô tả các yêu cầu bổ sung ngoài nhóm yêu cầu chức năng và phi chức năng. Các yêu cầu được trình bày theo cấu trúc tương tự IEEE nhằm làm rõ cơ sở phần cứng, phần mềm, truyền thông, bảo mật và chi phí dự kiến cho việc triển khai hệ thống.
+
+\subsection{Tổng hợp các yêu cầu khác}
+
+\renewcommand{\arraystretch}{1.3}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Nền tảng phần cứng (OREQ.01 - OREQ.07)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu khác -- Nền tảng phần cứng}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.6cm}|p{1.8cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực} \\
+\hline
+OREQ.01 & Hệ thống phải sử dụng ESP32-S3 làm bộ điều khiển trung tâm để kết nối Wi-Fi, giao tiếp MQTT, xử lý lệnh giọng nói cục bộ và điều khiển thiết bị IoT. & Phần cứng lõi & Bắt buộc & IoT \\
+\hline
+OREQ.02 & Hệ thống phải sử dụng micro I2S INMP441 hoặc mô-đun tương đương để thu âm lệnh giọng nói và truyền tín hiệu âm thanh đến ESP32-S3. & Thu nhận âm thanh & Bắt buộc & IoT, TinyML \\
+\hline
+OREQ.03 & Hệ thống phải sử dụng mô-đun rơ-le để điều khiển đóng hoặc ngắt các thiết bị điện mô phỏng như đèn và quạt. & Điều khiển thiết bị & Bắt buộc & IoT \\
+\hline
+OREQ.04 & Hệ thống phải có Servo Motor SG90 hoặc cơ cấu tương đương để mô phỏng chức năng rèm cửa hoặc cửa thông minh. & Thiết bị cơ khí & Nên có & IoT \\
+\hline
+OREQ.05 & Hệ thống phải có cảm biến DHT11 hoặc cảm biến tương đương để thu thập dữ liệu nhiệt độ và độ ẩm môi trường. & Cảm biến môi trường & Bắt buộc & IoT \\
+\hline
+OREQ.06 & Hệ thống phải có cảm biến nhiệt độ, khói hoặc ngọn lửa khi triển khai chức năng cảnh báo sự cố cháy và chữa cháy tự động. & Cảm biến an toàn & Bắt buộc & IoT, Safety \\
+\hline
+OREQ.07 & Hệ thống phải có bảng mạch thử nghiệm, jumper wire, điện trở, nút bấm và nguồn cấp ổn định để lắp ráp, kiểm thử và vận hành mô hình phần cứng. & Phụ kiện triển khai & Nên có & Hardware \\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Nền tảng phần mềm (OREQ.08 - OREQ.12)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu khác -- Nền tảng phần mềm}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.6cm}|p{1.8cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực} \\
+\hline
+OREQ.08 & Máy chủ xử lý phải được phát triển bằng Spring Boot và Java 17 hoặc phiên bản mới hơn. & Nền tảng Máy chủ xử lý & Bắt buộc & Software \\
+\hline
+OREQ.09 & Hệ thống phải sử dụng MySQL hoặc PostgreSQL để lưu trữ người dùng, thiết bị, dữ liệu cảm biến, lịch sử điều khiển và sự kiện cảnh báo. & Cơ sở dữ liệu & Bắt buộc & Database \\
+\hline
+OREQ.10 & Hệ thống phải sử dụng máy chủ MQTT như HiveMQ hoặc Mosquitto để truyền bản tin giữa Máy chủ xử lý và ESP32-S3. & Truyền thông IoT & Bắt buộc & MQTT \\
+\hline
+OREQ.11 & Phần mềm nhúng ESP32-S3 phải hỗ trợ nhận diện giọng nói cục bộ bằng TensorFlow Lite cho vi điều khiển, ESP-SR hoặc công nghệ tương đương. & Nhận diện giọng nói & Bắt buộc & TinyML \\
+\hline
+OREQ.12 & Bảng điều khiển phải được xây dựng bằng HTML, CSS, JavaScript hoặc công nghệ Web tương đương và hỗ trợ WebSocket để cập nhật dữ liệu thời gian thực. & Giao diện Web & Bắt buộc & Web \\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Truyền thông và tích hợp (OREQ.13 - OREQ.16)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu khác -- Truyền thông và tích hợp}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.6cm}|p{1.8cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực} \\
+\hline
+OREQ.13 & ESP32-S3 phải kết nối Internet hoặc mạng nội bộ thông qua Wi-Fi để trao đổi dữ liệu với máy chủ MQTT và Máy chủ xử lý. & Kết nối mạng & Bắt buộc & Network \\
+\hline
+OREQ.14 & Máy chủ xử lý phải nhận lệnh nhận diện từ thiết bị nhúng thông qua MQTT hoặc API REST. & Tích hợp Máy chủ xử lý -- IoT & Bắt buộc & Integration \\
+\hline
+OREQ.15 & Bảng điều khiển phải nhận trạng thái thiết bị, dữ liệu cảm biến và cảnh báo theo thời gian thực thông qua WebSocket. & Đồng bộ thời gian thực & Bắt buộc & WebSocket \\
+\hline
+OREQ.16 & Hệ thống phải hỗ trợ giao tiếp API REST giữa Giao diện người dùng và Máy chủ xử lý cho các chức năng điều khiển, quản lý và truy vấn dữ liệu. & API tích hợp & Bắt buộc & API REST \\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bảo mật và quyền riêng tư (OREQ.17 - OREQ.19)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu khác -- Bảo mật và quyền riêng tư}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.6cm}|p{1.8cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực} \\
+\hline
+OREQ.17 & Các kết nối Web phải sử dụng HTTPS trong môi trường triển khai thực tế. & Bảo mật Web & Nên có & Security \\
+\hline
+OREQ.18 & Hệ thống phải sử dụng JWT cho xác thực người dùng và BCrypt để mã hóa mật khẩu. & Xác thực và mật khẩu & Bắt buộc & Security \\
+\hline
+OREQ.19 & Dữ liệu âm thanh phải được xử lý cục bộ trên ESP32-S3 và không gửi lên dịch vụ nhận dạng giọng nói bên ngoài. & Quyền riêng tư & Bắt buộc & Privacy \\
+\hline
+\end{tabularx}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Chi phí triển khai (OREQ.20)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{table}[H]
+\centering
+\caption{Các yêu cầu khác -- Chi phí triển khai}
+\small
+\begin{tabularx}{\linewidth}{|p{1.8cm}|X|p{2.6cm}|p{1.8cm}|p{2.1cm}|}
+\hline
+\textbf{Mã yêu cầu} & \textbf{Mô tả} & \textbf{Mối quan tâm} & \textbf{Ưu tiên} & \textbf{Lĩnh vực} \\
+\hline
+OREQ.20 & Tổng chi phí linh kiện phần cứng dự kiến phải phù hợp với phạm vi đồ án và ưu tiên linh kiện phổ biến, dễ mua, dễ thay thế. & Chi phí triển khai & Nên có & Project Cost \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về nền tảng phần cứng}
+
+\textbf{Lý do:} Phần cứng là nền tảng để hệ thống thu nhận giọng nói, đọc dữ liệu cảm biến và điều khiển thiết bị vật lý trong mô hình Smart Home.
+
+\textbf{Động lực:} Đảm bảo mô hình có đủ linh kiện để trình diễn các chức năng điều khiển, giám sát môi trường, cảnh báo sự cố cháy và chữa cháy tự động.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} OREQ.01, OREQ.02, OREQ.03, OREQ.04, OREQ.05, OREQ.06, OREQ.07.
+
+\textbf{Mức độ liên quan:} Quan trọng vì hệ thống phụ thuộc trực tiếp vào ESP32-S3, cảm biến và mô-đun điều khiển để tạo ra hành vi thực tế thay vì chỉ mô phỏng trên phần mềm.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo nền tảng phần cứng}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Kiểm tra danh sách linh kiện; kiểm tra khả năng cấp nguồn; kiểm thử ESP32-S3 với micro, rơ-le, động cơ servo và cảm biến; đánh giá khả năng thay thế linh kiện tương đương khi cần. \\
+\hline
+\textbf{Chiến lược} & Sử dụng linh kiện phổ biến; ưu tiên mô-đun dễ kết nối với ESP32-S3; lắp ráp trên bảng mạch thử nghiệm để thuận tiện kiểm thử; tách rõ nhóm cảm biến, nhóm điều khiển và nhóm nguồn. \\
+\hline
+\textbf{Thước đo} & ESP32-S3 kết nối được Wi-Fi và MQTT; micro thu được tín hiệu âm thanh; rơ-le điều khiển được thiết bị mô phỏng; cảm biến trả dữ liệu hợp lệ; nguồn cấp ổn định trong quá trình trình diễn. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về nền tảng phần mềm}
+
+\textbf{Lý do:} Phần mềm cung cấp nền tảng xử lý nghiệp vụ, lưu trữ dữ liệu, giao diện người dùng và phần mềm nhúng nhận diện giọng nói cục bộ.
+
+\textbf{Động lực:} Đảm bảo các thành phần Máy chủ xử lý, Bảng điều khiển, cơ sở dữ liệu, máy chủ MQTT và phần mềm nhúng ESP32-S3 có thể phát triển, kiểm thử và tích hợp theo cùng kiến trúc.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} OREQ.08, OREQ.09, OREQ.10, OREQ.11, OREQ.12.
+
+\textbf{Mức độ liên quan:} Cần thiết để hiện thực hóa các trường hợp sử dụng điều khiển thiết bị, cảnh báo sự cố, giám sát môi trường và truy vấn dữ liệu lịch sử.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo nền tảng phần mềm}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Kiểm tra phiên bản Java; cấu hình Spring Boot; kiểm thử kết nối cơ sở dữ liệu; kiểm thử máy chủ MQTT; biên dịch phần mềm nhúng ESP32-S3; kiểm tra Bảng điều khiển trên trình duyệt. \\
+\hline
+\textbf{Chiến lược} & Sử dụng Spring Boot cho Máy chủ xử lý; sử dụng cơ sở dữ liệu quan hệ; dùng máy chủ MQTT phổ biến; triển khai phần mềm nhúng bằng Arduino IDE hoặc công cụ tương đương; xây dựng Bảng điều khiển Web đơn giản và dễ kiểm thử. \\
+\hline
+\textbf{Thước đo} & Máy chủ xử lý chạy được với Java 17 hoặc mới hơn; cơ sở dữ liệu lưu được bản ghi; máy chủ MQTT nhận và chuyển tiếp bản tin; Bảng điều khiển hiển thị dữ liệu; phần mềm nhúng nhận diện được tập lệnh đã hỗ trợ. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về truyền thông và tích hợp}
+
+\textbf{Lý do:} Hệ thống gồm nhiều thành phần khác nhau nên cần quy định rõ cách giao tiếp giữa thiết bị nhúng, Máy chủ xử lý và Bảng điều khiển.
+
+\textbf{Động lực:} Đảm bảo lệnh điều khiển, dữ liệu cảm biến, trạng thái thiết bị và cảnh báo được truyền đúng kênh, đúng định dạng và đúng thời điểm.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} OREQ.13, OREQ.14, OREQ.15, OREQ.16.
+
+\textbf{Mức độ liên quan:} Quan trọng vì MQTT, API REST và WebSocket là các kênh giao tiếp chính giúp hệ thống hoạt động theo thời gian thực.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo truyền thông và tích hợp}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Kiểm thử Wi-Fi trên ESP32-S3; kiểm thử gửi/đăng ký nhận MQTT; kiểm thử API REST giữa Bảng điều khiển và Máy chủ xử lý; kiểm thử WebSocket khi có thay đổi trạng thái hoặc cảnh báo. \\
+\hline
+\textbf{Chiến lược} & Dùng MQTT cho bản tin thiết bị; dùng API REST cho thao tác quản lý và truy vấn; dùng WebSocket cho cập nhật thời gian thực; chuẩn hóa nội dung bản tin dữ liệu bằng JSON. \\
+\hline
+\textbf{Thước đo} & ESP32-S3 gửi được dữ liệu đến máy chủ MQTT; Máy chủ xử lý nhận được lệnh hoặc dữ liệu cảm biến; Bảng điều khiển nhận cập nhật thời gian thực; API REST trả phản hồi hợp lệ cho Giao diện người dùng. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về bảo mật và quyền riêng tư}
+
+\textbf{Lý do:} Hệ thống có chức năng điều khiển thiết bị vật lý và lưu dữ liệu người dùng nên cần đảm bảo xác thực, phân quyền và quyền riêng tư.
+
+\textbf{Động lực:} Giảm rủi ro truy cập trái phép, lộ mật khẩu, lộ dữ liệu người dùng hoặc gửi dữ liệu âm thanh ra bên ngoài hệ thống.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} OREQ.17, OREQ.18, OREQ.19.
+
+\textbf{Mức độ liên quan:} Quan trọng đối với các chức năng đăng nhập, điều khiển thiết bị, quản lý thiết bị và xử lý giọng nói cục bộ.
+
+\begin{table}[H]
+\centering
+\caption{Thước đo bảo mật và quyền riêng tư}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Kiểm tra HTTPS khi triển khai; kiểm tra JWT trong các API cần bảo vệ; kiểm tra mật khẩu không lưu dạng văn bản thuần; kiểm tra luồng xử lý âm thanh trên ESP32-S3. \\
+\hline
+\textbf{Chiến lược} & Sử dụng HTTPS cho kết nối Web; xác thực bằng JWT; mã hóa mật khẩu bằng BCrypt; xử lý nhận diện giọng nói cục bộ; giới hạn quyền truy cập vào API điều khiển. \\
+\hline
+\textbf{Thước đo} & API điều khiển từ chối người dùng chưa xác thực; mật khẩu được lưu dưới dạng mã băm; âm thanh không gửi đến dịch vụ nhận dạng bên ngoài; kết nối Web có thể cấu hình HTTPS trong môi trường triển khai. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\subsection{Yêu cầu về kinh phí và vật tư triển khai}
+
+\textbf{Lý do:} Chi phí và vật tư triển khai cần được xác định trước để bảo đảm đồ án khả thi trong phạm vi thời gian, ngân sách và điều kiện học tập.
+
+\textbf{Động lực:} Giúp nhóm chuẩn bị linh kiện, dự trù kinh phí, thay thế thiết bị khi cần và kiểm soát phạm vi trình diễn.
+
+\textbf{Tinh chỉnh thành các yêu cầu:} OREQ.20.
+
+\textbf{Mức độ liên quan:} Quan trọng vì hệ thống cần mô hình phần cứng thực tế để trình diễn chức năng IoT, TinyML, MQTT và Bảng điều khiển.
+
+\begin{table}[H]
+\centering
+\caption{Dụng cụ và kinh phí triển khai dự kiến}
+\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{3.2cm}|>{\raggedright\arraybackslash}X|>{\centering\arraybackslash}p{2.4cm}|>{\centering\arraybackslash}p{1.1cm}|}
+\hline
+\textbf{Tên} & \textbf{Mục đích} & \textbf{Giá thành} & \textbf{SL} \\
+\hline
+Bo mạch ESP32-S3 & Bộ điều khiển trung tâm, kết nối Wi-Fi, giao tiếp MQTT, chạy mô hình TinyML để nhận diện lệnh giọng nói và điều khiển thiết bị. & 180.000 VNĐ & 1 \\
+\hline
+Mô-đun Rơ-le 4 kênh (5V) & Đóng/ngắt nguồn cho các thiết bị như đèn và quạt theo lệnh từ ESP32-S3. & 35.000 VNĐ & 1 \\
+\hline
+Đèn LED hoặc bóng đèn & Mô phỏng hệ thống chiếu sáng thông minh và trạng thái bật/tắt thiết bị. & 30.000 VNĐ & 1 \\
+\hline
+Động cơ servo SG90 & Mô phỏng cơ cấu mở van hoặc cần gạt xả nước trong chức năng chữa cháy tự động. & 25.000 VNĐ & 1 \\
+\hline
+Cảm biến DHT11 & Thu thập dữ liệu nhiệt độ, độ ẩm để hiển thị và hỗ trợ truy vấn bằng giọng nói. & 30.000 VNĐ & 1 \\
+\hline
+Micro I2S INMP441 & Thu âm lệnh giọng nói làm đầu vào cho mô hình TinyML trên ESP32-S3. & 35.000 VNĐ & 1 \\
+\hline
+Bảng mạch thử nghiệm & Lắp ráp, kiểm tra và thay đổi kết nối mạch thử nghiệm mà không cần hàn. & 30.000 VNĐ & 1 \\
+\hline
+Dây cắm (Dây cắm nối mạch) & Kết nối ESP32-S3 với micro, cảm biến, rơ-le và các linh kiện ngoại vi trên bảng mạch thử nghiệm. & 25.000 VNĐ & 1 bộ \\
+\hline
+Nút bấm cơ học (Nút nhấn) & Mô phỏng điều khiển thủ công hoặc nút dự phòng khi Web/giọng nói gặp sự cố. & 5.000 VNĐ & 2 \\
+\hline
+Điện trở & Hạn chế dòng điện, bảo vệ linh kiện và ổn định tín hiệu trong mạch. & 5.000 VNĐ & 1 bộ \\
+\hline
+Máy tính hoặc máy tính xách tay & Phát triển phần mềm, cấu hình ESP32-S3, triển khai Máy chủ xử lý, cơ sở dữ liệu và Bảng điều khiển. & Có sẵn & 1 \\
+\hline
+Bộ nguồn hoặc cáp USB cấp nguồn & Cung cấp nguồn điện ổn định cho ESP32-S3 và các linh kiện phần cứng. & 30.000 VNĐ & 1 \\
+\hline
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Thước đo kinh phí và vật tư triển khai}
+\small
+\begin{tabularx}{\linewidth}{|p{3cm}|X|}
+\hline
+\textbf{Hành động} & Lập danh sách linh kiện; kiểm tra giá dự kiến; chuẩn bị linh kiện thay thế; kiểm tra thiết bị trước khi trình diễn; ghi nhận linh kiện có sẵn và linh kiện cần mua. \\
+\hline
+\textbf{Chiến lược} & Ưu tiên linh kiện phổ biến, chi phí thấp, dễ mua; tận dụng máy tính có sẵn; chọn mô-đun tương đương khi linh kiện chính không khả dụng; giữ phạm vi phần cứng phù hợp đồ án. \\
+\hline
+\textbf{Thước đo} & Danh sách vật tư đầy đủ; chi phí dự kiến rõ ràng; linh kiện đáp ứng được các trường hợp sử dụng chính; hệ thống có thể trình diễn điều khiển, giám sát và cảnh báo trên mô hình phần cứng. \\
+\hline
+\end{tabularx}
+\end{table}
+
+\section{Kết luận và hướng phát triển}
+
+\subsection{Kết luận}
+
+Hệ thống điều khiển thiết bị IoT bằng giọng nói là một giải pháp kết hợp giữa IoT, điện toán Web và mô hình TinyML nhận diện giọng nói cục bộ trên ESP32-S3 nhằm nâng cao khả năng tương tác giữa con người và các thiết bị thông minh.
+
+Thông qua việc sử dụng Spring Boot, MQTT, ESP32-S3 và mô hình TinyML nhận diện giọng nói cục bộ, hệ thống cho phép điều khiển thiết bị bằng giọng nói, giám sát trạng thái theo thời gian thực và quản lý tập trung trên nền tảng Web.
+
+\subsection{Hướng phát triển}
+
+\begin{itemize}
+\item Hỗ trợ thêm nhiều loại thiết bị IoT.
+\item Tích hợp các cảm biến môi trường nâng cao.
+\item Xây dựng ứng dụng di động Android và iOS.
+\item Hỗ trợ điều khiển bằng tiếng Việt nâng cao.
+\item Tối ưu mô hình TinyML để tăng độ chính xác, giảm độ trễ và hỗ trợ thêm nhiều lệnh tiếng Việt.
+\item Mở rộng thành hệ thống Smart Home hoàn chỉnh.
+\item Bổ sung chức năng tự động hóa theo ngữ cảnh và lịch trình.
+\item Tích hợp trợ lý ảo và các nền tảng Smart Home phổ biến.
+\end{itemize}
+
+\end{document}

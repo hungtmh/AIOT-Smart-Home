@@ -64,10 +64,16 @@ public class DeviceService {
     return commandDevice(device.id(), !current.desiredState());
   }
 
+  public void handleVoiceCommand(String deviceId, boolean state) {
+    DeviceDefinition device = requireDevice(deviceId);
+    DeviceState nextState = repository.setReportedState(device, state);
+    repository.addControlLog(device.id(), state, "voice", "VOICE_ACCEPTED");
+    realtimeHub.broadcastDeviceState(DeviceStateResponse.from(nextState, device.name(), device.type(), true));
+  }
+
   public void handleReportedState(String deviceId, boolean state) {
     DeviceDefinition device = requireDevice(deviceId);
     DeviceState nextState = repository.setReportedState(device, state);
-    repository.addControlLog(device.id(), state, "esp32", "STATE_REPORTED");
     realtimeHub.broadcastDeviceState(DeviceStateResponse.from(nextState, device.name(), device.type(), true));
   }
 

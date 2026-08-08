@@ -151,12 +151,16 @@ public class DeviceRepository {
           order by created_at desc
           limit ?
           """,
-          (rs, rowNum) -> new ControlLogResponse(
-              rs.getString("device_id"),
-              rs.getBoolean("requested_state") ? "ON" : "OFF",
-              rs.getString("source"),
-              rs.getString("result"),
-              toOffsetDateTime(rs.getTimestamp("created_at"))),
+          (rs, rowNum) -> {
+            String rawSource = rs.getString("source");
+            String mappedSource = ("esp32".equalsIgnoreCase(rawSource) || "device".equalsIgnoreCase(rawSource)) ? "web" : rawSource;
+            return new ControlLogResponse(
+                rs.getString("device_id"),
+                rs.getBoolean("requested_state") ? "ON" : "OFF",
+                mappedSource,
+                rs.getString("result"),
+                toOffsetDateTime(rs.getTimestamp("created_at")));
+          },
           limit);
     } catch (DataAccessException exception) {
       warnDatabaseFallback(exception);

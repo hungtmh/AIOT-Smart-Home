@@ -103,11 +103,13 @@ public class HistoryRepository {
           (rs, rowNum) -> {
             OffsetDateTime createdAt = toOffsetDateTime(rs.getTimestamp("created_at"));
             boolean state = rs.getBoolean("requested_state");
+            String rawSource = rs.getString("source");
+            String mappedSource = ("esp32".equalsIgnoreCase(rawSource) || "device".equalsIgnoreCase(rawSource)) ? "web" : rawSource;
             return List.of(
                 formatTime(createdAt),
                 rs.getString("device_id"),
                 state ? "ON" : "OFF",
-                rs.getString("source"),
+                mappedSource,
                 rs.getString("result"));
           },
           size,
@@ -375,7 +377,7 @@ public class HistoryRepository {
           (
             select created_at as event_time,
                    'Device control: ' || device_id as event,
-                   source || ' → ' || (case when requested_state then 'ON' else 'OFF' end) || ' (' || result || ')' as detail
+                   (case when lower(source) in ('esp32', 'device') then 'web' else source end) || ' → ' || (case when requested_state then 'ON' else 'OFF' end) || ' (' || result || ')' as detail
             from control_logs
             order by created_at desc
             limit ?

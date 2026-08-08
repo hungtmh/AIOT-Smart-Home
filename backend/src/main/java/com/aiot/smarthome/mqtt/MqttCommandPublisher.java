@@ -91,7 +91,7 @@ public class MqttCommandPublisher implements MqttCallback {
       byte[] payload = (enabled ? "ON" : "OFF").getBytes(StandardCharsets.UTF_8);
       MqttMessage message = new MqttMessage(payload);
       message.setQos(1);
-      message.setRetained(true);
+      message.setRetained(false);
       client.publish(commandTopic(deviceId), message);
       return true;
     } catch (MqttException exception) {
@@ -211,6 +211,16 @@ public class MqttCommandPublisher implements MqttCallback {
       
       historyRepository.saveVoiceCommand(recognizedText, mappedDevice, action, confidence, "Accepted");
       logger.info("Saved voice command: '{}'", recognizedText);
+
+      // Đồng bộ trạng thái thiết bị và ghi log điều khiển nguồn "voice"
+      if (!mappedDevice.isBlank()) {
+        boolean state = action.equalsIgnoreCase("OPEN") || action.equalsIgnoreCase("ON") || action.equalsIgnoreCase("TRUE");
+        try {
+          deviceService.handleVoiceCommand(mappedDevice, state);
+        } catch (Exception ex) {
+          logger.warn("Could not sync device state for voice command ({}): {}", mappedDevice, ex.getMessage());
+        }
+      }
 
       VoiceCommandResponse voiceResponse = new VoiceCommandResponse(
           null,

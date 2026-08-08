@@ -57,26 +57,6 @@ export function RealtimeProvider({ session, children }) {
     );
   }, []);
 
-  const loadLatestFireAlert = useCallback(async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/fire-alert/latest`);
-
-      if (response.status === 204) {
-        setFireAlert(null);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Cannot load latest fire alert");
-      }
-
-      const data = await response.json();
-      setFireAlert(data);
-    } catch (error) {
-      console.error("Failed to load latest fire alert:", error);
-    }
-  }, []);
-
   const loadLatestVoiceCommand = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/history/voice/latest`);
@@ -107,7 +87,6 @@ export function RealtimeProvider({ session, children }) {
       setConnectionState("reconnecting");
       reconnectTimer = window.setTimeout(() => {
         reconnectTimer = null;
-        loadLatestFireAlert();
         loadLatestVoiceCommand();
         connect();
       }, delay);
@@ -178,7 +157,6 @@ export function RealtimeProvider({ session, children }) {
       });
     }
 
-    loadLatestFireAlert();
     loadLatestVoiceCommand();
     connect();
 
@@ -193,10 +171,9 @@ export function RealtimeProvider({ session, children }) {
         socket.close(1000, "Client closed");
       }
     };
-  }, [session?.access_token, updateDeviceState, loadLatestFireAlert, loadLatestVoiceCommand]);
+  }, [session?.access_token, updateDeviceState, loadLatestVoiceCommand]);
 
   const clearFireAlert = () => {
-    console.log("clear");
     setFireAlert(null);
   };
 
@@ -217,7 +194,6 @@ export function RealtimeProvider({ session, children }) {
       deviceStates,
       error,
       fireAlert,
-      clearFireAlert,
       latestVoiceCommand,
       telemetry,
       updateDeviceState,
